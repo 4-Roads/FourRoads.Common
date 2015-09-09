@@ -5,7 +5,8 @@
 		<authors>4 Roads Ltd</authors>
 		<owners>4 Roads Ltd</owners>
 		<version>2.0</version>
-		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<licenseUrl>http://www.4-roads.com/OpenLicense</licenseUrl>
+		<requireLicenseAcceptance>true</requireLicenseAcceptance>
 		<description>Library of common code for use across any 4 Roads development project</description>
 		<tags>utility</tags>
 	</metadata>
