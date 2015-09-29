@@ -1,6 +1,6 @@
 //  ------------------------------------------------------------------------------
-//  <copyright company="Four Roads LLC">
-//  Copyright (c) Four Roads LLC.  All rights reserved.
+//  <copyright company="4 Roads Ltd">
+//  Copyright (c) 4 Roads Ltd.  All rights reserved.
 //  </copyright>
 //  ------------------------------------------------------------------------------
 
@@ -10,8 +10,8 @@ using System.Reflection;
 
 #endregion
 
-[assembly: AssemblyCompany("Four Roads, LLC")]
-[assembly: AssemblyCopyright("Copyright © Four Roads, LLC 2007-2014")]
+[assembly: AssemblyCompany("4 Roads Ltd")]
+[assembly: AssemblyCopyright("Copyright © Four Roads Ltd 2012-2015")]
 [assembly: AssemblyTrademark("All rights reserved.")]
 // AssemblyVersion format: major.minor.0.0, e.g. 1.5.0.0
 [assembly: AssemblyVersion("0.0.0.0")]
