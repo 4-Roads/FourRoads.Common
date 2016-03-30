@@ -3,15 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Xml.Linq;
 using FourRoads.Common.Base;
 using Ninject;
 using Ninject.Activation;
-using Ninject.Extensions.Xml;
-using Ninject.Extensions.Xml.Extensions;
-using Ninject.Extensions.Xml.Processors;
 using Ninject.Infrastructure.Language;
-using Ninject.Planning.Bindings;
 using Ninject.Planning.Directives;
 using Ninject.Planning.Targets;
 using Ninject.Syntax;
@@ -37,17 +32,6 @@ namespace FourRoads.Common
         private static readonly ReaderWriterLockSlim _lock;
         private static readonly ThreadSafeDictionary<string, InjectionSettings> _bindingsLookup;
 
-        public class XmlModuleLoaderPluginEx :  XmlModuleLoaderPlugin ,IModuleLoaderPlugin
-        {
-            public XmlModuleLoaderPluginEx(IKernel kernel, IEnumerable<IModuleChildXmlElementProcessor> elementProcessors) : base(kernel, elementProcessors) {}
-
-            IEnumerable<string> IModuleLoaderPlugin.SupportedExtensions
-            {
-                get { return base.SupportedExtensions.Concat(new[] {".config"}); }
-
-            }
-        }
-
         public class ReverseConstructorScorer : NinjectComponent, IConstructorScorer
         {
             public int Score(IContext context, ConstructorInjectionDirective directive)
@@ -62,70 +46,21 @@ namespace FourRoads.Common
 				foreach (ITarget target in directive.Targets)
 				{
 					ITarget target1 = target;
-					foreach (IParameter parameter in context.Parameters.Where(parameter => string.Equals(target1.GetType(), parameter.GetType())))
-					{
-						score++;
-					}
+				    score += context.Parameters.Count(parameter => string.Equals(target1.GetType(), parameter.GetType()));
 
-					Type targetType = target.Type;
+				    Type targetType = target.Type;
 					if (targetType.IsArray)
 						targetType = targetType.GetElementType();
 
 					if (targetType.IsGenericType && targetType.GetInterfaces().Any(type => type == typeof(IEnumerable)))
 						targetType = targetType.GetGenericArguments()[0];
 
-					if (context.Kernel.GetBindings(targetType).Count() > 0)
+					if (context.Kernel.GetBindings(targetType).Any())
 						score--;
 				}
 
 				return score;
         	}
-        }
-
-        public class BindElementHandler : BindXmlElementProcessor, IModuleChildXmlElementProcessor
-        {
-            public BindElementHandler(IBindingBuilderFactory bindingBuilderFactory, IChildElementProcessor childElementProcessor)
-                : base(bindingBuilderFactory, childElementProcessor)
-            {
-            }
-
-            void IModuleChildXmlElementProcessor.Handle(IBindingRoot module, XElement element)
-            {
-                //System.Diagnostics.Debugger.Break();
-
-                if (ReadReBind(element))
-                {
-                    
-                    IEnumerable<IBinding> currentBindings = ((IKernel)Injector.ResolutionRoot).GetBindings(GetTypeFromAttributeValue(ExtensionsForXElement.RequiredAttribute(element, "service")));
-
-                    foreach (IBinding currentBinding in currentBindings)
-                        module.RemoveBinding(currentBinding); 
-
-                    //Remove the rebind attribute as this causes issues now in the new injector
-                    element.Attribute("rebind").Remove();
-                }
-                Handle(module, element);
-            }
-
-
-            private static Type GetTypeFromAttributeValue(XAttribute attribute)
-            {
-                Type type = Type.GetType(attribute.Value, false);
-                if (type == (Type)null)
-                    throw new Exception(string.Format("Couldn't resolve type '{0}' defined in '{1}' attribute.", (object)attribute.Value, (object)attribute.Name));
-                else
-                    return type;
-            }
-
-            private static bool ReadReBind(XElement element)
-            {
-                XAttribute xattribute = element.Attribute("rebind");
-        
-                if (xattribute == null)
-                    return false;
-
-                return string.Compare(xattribute.Value, bool.TrueString, true) == 0;
-            }
         }
 
         static Injector()
@@ -303,12 +238,6 @@ namespace FourRoads.Common
                         // Score class constructors based on old Ninject pattern of calling default constructor first
                         _root.Components.RemoveAll(typeof(IConstructorScorer));
                         _root.Components.Add<IConstructorScorer, ReverseConstructorScorer>();
-
-                        _root.Components.RemoveAll(typeof(IModuleChildXmlElementProcessor));
-                        _root.Components.Add<IModuleChildXmlElementProcessor, BindElementHandler>();
-
-                        _root.Components.RemoveAll(typeof(XmlModuleLoaderPlugin));
-                        _root.Components.Add<IModuleLoaderPlugin, XmlModuleLoaderPluginEx>();
                     }
 
                     
