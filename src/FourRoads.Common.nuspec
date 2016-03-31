@@ -13,6 +13,8 @@
 		<tags>utility</tags>
 		<dependencies>
 			<dependency id="Castle.NVelocity" version="1.1" />
+			<dependency id="Ninject" version="2.2.1.4" />
+			<dependency id="Ninject.Extensions.Xml" version="2.2.0.6" />
 		</dependencies>
 	</metadata>
 </package>
