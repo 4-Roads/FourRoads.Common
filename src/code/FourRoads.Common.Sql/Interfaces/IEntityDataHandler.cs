@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Data;
- using FourRoads.Common.Interfaces;
- 
+﻿using FourRoads.Common.Interfaces;
+
 namespace FourRoads.Common.Sql
 {
     public interface IEntityDataHandler<TEntity> : IEntityDataPopulator<TEntity>

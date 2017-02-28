@@ -1,143 +1,93 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using FourRoads.Common.Interfaces;
-using FourRoads.Common;
-using System.Data.SqlClient;
 using System.Data;
-  
+using System.Data.SqlClient;
+using FourRoads.Common.Interfaces;
+
 namespace FourRoads.Common.Sql
 {
-    public class DataLayer : IDBFactory
+    public abstract class DataLayer : IDBFactory
     {
-        protected string _databaseOwner;
-        protected string _connectionString;
-        private ISqlDataHelper _checker = new SqlDataHelper();
+        private readonly IObjectFactory _objectFactory;
 
-        public DataLayer(ISettings configuration , string providerName)
+        public DataLayer(IObjectFactory objectFactory)
         {
-            DataProvider provider = configuration.GetDataProviderByName(providerName);
-
-            _databaseOwner = provider.DatabaseOwner;
-
-            _connectionString = ConfigurationManager.ConnectionStrings[provider.ConnectionStringName].ConnectionString;
+            _objectFactory = objectFactory;
         }
 
-        public DataLayer(string databaseOwner, string connectionString)
-        {
-            _databaseOwner = databaseOwner;
-            _connectionString = connectionString;
-        }
+        public abstract IDataHelper Checker { get; }
 
-        public ISqlDataHelper Checker
-        {
-            get { return _checker; }
-        }
+        public virtual string ConnectionString { get; set; }
 
-        public virtual string ConnectionString
-        {
-            get
-            {
-                return _connectionString;
-            }
-        }
+        public virtual string DatabaseOwner { get; set; }
 
-        public virtual string DatabaseOwner
-        {
-            get
-            {
-                return _databaseOwner;
-            }
-        }
+        public abstract SqlConnection GetSqlConnection();
 
-        public virtual SqlConnection GetSqlConnection()
-        {
-
-            try
-            {
-                return new SqlConnection(ConnectionString);
-            }
-            catch
-            {
-                throw new Exception("SQL Connection String is invalid.");
-            }
-
-        }
-
-        protected SqlCommand CreateSprocCommand(string sprocName, SqlConnection connection)
-        {
-            SqlCommand command = new SqlCommand(DatabaseOwner + "." + sprocName, connection);
-            command.CommandType = CommandType.StoredProcedure;
-
-            return command;
-        }
+        protected abstract SqlCommand CreateSprocCommand(string sprocName, SqlConnection connection);
 
         protected virtual T CreateDataEntityWithRead<T>(IDataReader reader)
         {
-            IEntityDataPopulator<T> populator = GetPopulator<T>();
+            var populator = GetPopulator<T>();
             return populator.CreateEntityWithRead(reader);
         }
 
         protected virtual T CreateDataEntity<T>(IDataReader reader)
         {
-            IEntityDataPopulator<T> populator = GetPopulator<T>();
+            var populator = GetPopulator<T>();
             return populator.CreateEntity(reader);
         }
 
         protected virtual void PopulateDataEntity<T>(T entity, IDataReader reader)
         {
-            IEntityDataPopulator<T> populator = GetPopulator<T>();
+            var populator = GetPopulator<T>();
             populator.PopulateEntityData(entity, reader);
         }
 
         protected virtual IPagedCollection<T> CreateEntityCollection<T>(IPagedQueryV2 query, IDataReader reader, int total)
         {
-            IEntityDataPopulator<T> populator = GetPopulator<T>();
-            return populator.CreateEntityCollection(query, reader, total); 
+            var populator = GetPopulator<T>();
+            return populator.CreateEntityCollection(query, reader, total);
         }
 
         protected virtual IEnumerable<T> CreateEntityCollection<T>(IDataReader reader)
         {
-            IEntityDataPopulator<T> populator = GetPopulator<T>();
+            var populator = GetPopulator<T>();
             return populator.CreateEntityCollection(reader);
         }
 
         protected virtual IPagedCollection<T> CreateEntityCollection<T>(IPagedQueryV2 query, IDataReader reader, IDataParameter totalParameter)
         {
-            IEntityDataPopulator<T> populator = GetPopulator<T>();
+            var populator = GetPopulator<T>();
             return populator.CreateEntityCollection(query, reader, totalParameter);
         }
 
         protected virtual void AddEntity<T>(T entity)
         {
-            IEntityDataHandler<T> handler = GetEntityDataHandler<T>();
-            handler.Add(this, entity);  
+            var handler = GetEntityDataHandler<T>();
+            handler.Add(this, entity);
         }
 
         protected virtual void UpdateEntity<T>(T entity)
         {
-            IEntityDataHandler<T> handler = GetEntityDataHandler<T>();
+            var handler = GetEntityDataHandler<T>();
             handler.Update(this, entity);
         }
 
         protected virtual void DeleteEntity<T>(T entity)
         {
-            IEntityDataHandler<T> handler = GetEntityDataHandler<T>();
+            var handler = GetEntityDataHandler<T>();
             handler.Delete(this, entity);
         }
 
         protected virtual T GetEntity<T, TId>(TId id)
         {
-            IEntityDataHandler<T> handler = GetEntityDataHandler<T>();
-            return handler.Get<TId>(this, id);
+            var handler = GetEntityDataHandler<T>();
+            return handler.Get(this, id);
         }
 
         protected virtual IPagedCollection<T> GetEntities<T>(IPagedQueryV2 query)
         {
-            IEntityDataHandler<T> handler = GetEntityDataHandler<T>();
+            var handler = GetEntityDataHandler<T>();
             return handler.Get(this, query);
         }
 
@@ -146,13 +96,13 @@ namespace FourRoads.Common.Sql
             IEntityDataPopulator<T> populator = null;
             try
             {
-                populator = Injector.Get<IEntityDataPopulator<T>>();
+                populator = _objectFactory.Get<IEntityDataPopulator<T>>();
                 if (populator == null)
-                    throw new Exception(string.Format("Failed to bind object of IEntityDataPopulator<{0}>", typeof(T).Name));
+                    throw new Exception($"Failed to bind object of IEntityDataPopulator<{typeof(T).Name}>");
             }
             catch (Exception ex)
             {
-                throw new Exception(string.Format("You must first define and bind an implementation of IEntityDataPopulator<{0}>", typeof(T).Name), ex);
+                throw new Exception($"You must first define and bind an implementation of IEntityDataPopulator<{typeof(T).Name}>", ex);
             }
             return populator;
         }
@@ -162,73 +112,61 @@ namespace FourRoads.Common.Sql
             IEntityDataHandler<T> handler = null;
             try
             {
-                handler = Injector.Get<IEntityDataHandler<T>>();
+                handler = _objectFactory.Get<IEntityDataHandler<T>>();
                 if (handler == null)
-                    throw new Exception(string.Format("Failed to bind object of IEntityDataHandler<{0}>", typeof(T).Name));
+                    throw new Exception($"Failed to bind object of IEntityDataHandler<{typeof(T).Name}>");
             }
             catch (Exception ex)
             {
-                throw new Exception(string.Format("You must first define and bind an implementation of IEntityDataHandler<{0}>", typeof(T).Name), ex);
+                throw new Exception($"You must first define and bind an implementation of IEntityDataHandler<{typeof(T).Name}>", ex);
             }
             return handler;
         }
 
         #region IDBFactory Members
 
-        IDbCommand IDBFactory.CreateCommand(string commandName, IDbConnection connection)
+        public IDbCommand CreateCommand(string commandName, IDbConnection connection)
         {
-            return CreateSprocCommand(commandName, connection as SqlConnection); 
+            return CreateSprocCommand(commandName, connection as SqlConnection);
         }
 
-        IDbConnection IDBFactory.CreateConnection()
+        public IDbConnection CreateConnection()
         {
-            return GetSqlConnection(); 
+            return GetSqlConnection();
         }
 
-        IDbDataParameter IDBFactory.CreateParameter(string name, DbType dataType)
-        {
-            return new SqlParameter(name, dataType.ToSqlDbType()); 
-        }
+        public abstract IDbDataParameter CreateParameter(string name, DbType dataType);
 
-        IDbDataParameter IDBFactory.CreateParameter(string name, DbType dataType, int size)
-        {
-            return new SqlParameter(name, dataType.ToSqlDbType(), size); 
-        }
+        public abstract IDbDataParameter CreateParameter(string name, DbType dataType, int size);
 
-        IDbDataParameter IDBFactory.CreateParameter(string name, DbType dataType, ParameterDirection direction)
+        public IDbDataParameter CreateParameter(string name, DbType dataType, ParameterDirection direction)
         {
-            IDbDataParameter parameter = ((IDBFactory)this).CreateParameter(name, dataType);
+            var parameter = ((IDBFactory) this).CreateParameter(name, dataType);
             parameter.Direction = direction;
             return parameter;
         }
 
-        IDbDataParameter IDBFactory.CreateParameter(string name, DbType dataType, int size, ParameterDirection direction)
+        public IDbDataParameter CreateParameter(string name, DbType dataType, int size, ParameterDirection direction)
         {
-            IDbDataParameter parameter = ((IDBFactory)this).CreateParameter(name, dataType, size);
+            var parameter = ((IDBFactory) this).CreateParameter(name, dataType, size);
             parameter.Direction = direction;
             return parameter;
         }
 
-        IDbDataParameter IDBFactory.CreateParameter(string name, object value, DbType dataType)
+        public IDbDataParameter CreateParameter(string name, object value, DbType dataType)
         {
-            IDbDataParameter parameter = ((IDBFactory)this).CreateParameter(name, dataType);
-			parameter.Value = value ?? DBNull.Value;
+            var parameter = ((IDBFactory) this).CreateParameter(name, dataType);
+            parameter.Value = value ?? DBNull.Value;
             return parameter;
         }
 
-        IDbDataParameter IDBFactory.CreateParameter(string name, object value, DbType dataType, int size)
+        public IDbDataParameter CreateParameter(string name, object value, DbType dataType, int size)
         {
-            IDbDataParameter parameter = ((IDBFactory)this).CreateParameter(name, dataType, size);
-        	parameter.Value = value ?? DBNull.Value;
+            var parameter = ((IDBFactory) this).CreateParameter(name, dataType, size);
+            parameter.Value = value ?? DBNull.Value;
             return parameter;
-        }
-
-        string IDBFactory.DatabaseOwner
-        {
-            get { return DatabaseOwner; }
         }
 
         #endregion
-
     }
 }

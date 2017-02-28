@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Data;
 using FourRoads.Common.Interfaces;
 
@@ -15,6 +12,5 @@ namespace FourRoads.Common.Sql
         IPagedCollection<T> CreateEntityCollection(IPagedQueryV2 query, IDataReader dataReader, int total);
         IPagedCollection<T> CreateEntityCollection(IPagedQueryV2 query, IDataReader dataReader, IDataParameter totalParameter);
         IEnumerable<T> CreateEntityCollection(IDataReader dataReader);
-
     }
 }

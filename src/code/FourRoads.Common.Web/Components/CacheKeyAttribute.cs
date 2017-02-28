@@ -5,10 +5,10 @@ namespace FourRoads.Common
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class CacheKeyAttribute : Attribute
     {
-        public readonly string KeyName;
         public readonly object DefaultValue;
         public readonly bool HasDefaultValue;
         public readonly bool Ignored;
+        public readonly string KeyName;
 
         public CacheKeyAttribute(string keyName)
         {

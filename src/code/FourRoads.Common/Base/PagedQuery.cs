@@ -15,27 +15,16 @@ namespace FourRoads.Common
 {
     public abstract class PagedQueryBase : IPagedQueryV2
     {
-        private int _pageSize = int.MaxValue;
-        private SortOrder _sortOrder = SortOrder.Ascending;
-
-    	protected PagedQueryBase()
+        protected PagedQueryBase()
         {
             UseCache = true;
         }
 
         public virtual uint PageIndex { get; set; }
 
-        public virtual int PageSize
-        {
-            get { return _pageSize; }
-            set { _pageSize = value; }
-        }
+        public virtual int PageSize { get; set; } = int.MaxValue;
 
-        public virtual SortOrder SortOrder
-        {
-            get { return _sortOrder; }
-            set { _sortOrder = value; }
-        }
+        public virtual SortOrder SortOrder { get; set; } = SortOrder.Ascending;
 
         public abstract string CacheKey { get; }
 

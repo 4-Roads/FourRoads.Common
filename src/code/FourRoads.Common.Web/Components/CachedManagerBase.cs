@@ -6,31 +6,27 @@ namespace FourRoads.Common
         IManagerV2<TItem, TQuery, TId>
         where TQuery : class, IPagedQueryV2
         where TItem : class, ICacheable
-        where TCache :  CachedCollection<TItem, TQuery, TCache>, ICachedCollectionData<TItem, TQuery>, new()
-        where TData : class , IDataProvider<TItem, TQuery>
+        where TCache : CachedCollection<TItem, TQuery>, ICachedCollectionData<TItem, TQuery>
+        where TData : class, IDataProvider<TItem, TQuery>
     {
-
-        public CachedManagerBase()
-        {
-            _cachedCollection = CachedCollection<TItem, TQuery, TCache>.Cache();
-        }
-
-        private TCache _cachedCollection;
-        protected virtual TCache CachedCollection
-        {
-            get
-            {
-                return _cachedCollection;
-            }
-        }
-
+        private readonly IObjectFactory _objectFactory;
         private TData _dataProvider;
+
+
+        public CachedManagerBase(IObjectFactory objectFactory)
+        {
+            _objectFactory = objectFactory;
+            CachedCollection = objectFactory.Get<TCache>();
+        }
+
+        protected virtual TCache CachedCollection { get; }
+
         protected virtual TData DataProvider
         {
             get
             {
                 if (_dataProvider == null)
-                    _dataProvider = Injector.Get<TData>();
+                    _dataProvider = _objectFactory.Get<TData>();
 
                 return _dataProvider;
             }
@@ -45,11 +41,13 @@ namespace FourRoads.Common
             DataProvider.Add(item);
             CachedCollection.Add(item);
         }
+
         public virtual void Delete(TItem item)
         {
             DataProvider.Delete(item);
             CachedCollection.Remove(item);
         }
+
         public virtual void Update(TItem item)
         {
             CachedCollection.Remove(item);

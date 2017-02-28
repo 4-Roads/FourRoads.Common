@@ -7,20 +7,28 @@
 #region
 
 using System;
-using System.Collections.Generic;  
-using System.Data.SqlTypes;
-using System.Text.RegularExpressions;
 using System.ComponentModel;
-using System.Reflection;
+using System.Data.SqlTypes;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Xml;
 using FourRoads.Common.Extensions;
- 
+using FourRoads.Common.Interfaces;
+
 #endregion
 
 namespace FourRoads.Common.Sql
 {
-    
-    public class SqlDataHelper : ISqlDataHelper
+    public class SqlDataHelper : IDataHelper
     {
+        private IObjectFactory _objectFactory;
+        public SqlDataHelper(IObjectFactory objectFactory)
+        {
+            _objectFactory = objectFactory;
+        }
+
         #region ISqlDataChecker Members
 
         public object MakeSafeValue(DateTime date, bool returnNull)
@@ -32,7 +40,7 @@ namespace FourRoads.Common.Sql
 
                 return (DateTime) SqlDateTime.MinValue;
             }
-            else if (date > (DateTime) SqlDateTime.MaxValue)
+            if (date > (DateTime) SqlDateTime.MaxValue)
             {
                 if (returnNull)
                     return DBNull.Value;
@@ -46,7 +54,7 @@ namespace FourRoads.Common.Sql
         {
             if (value <= (int) SqlInt32.MinValue)
                 return (int) SqlInt32.MinValue + 1;
-            else if (value >= (int) SqlInt32.MaxValue)
+            if (value >= (int) SqlInt32.MaxValue)
                 return (int) SqlInt32.MaxValue - 1;
             return value;
         }
@@ -55,7 +63,7 @@ namespace FourRoads.Common.Sql
         {
             if (value <= (long) SqlInt64.MinValue)
                 return (long) SqlInt64.MinValue + 1;
-            else if (value >= (long) SqlInt64.MaxValue)
+            if (value >= (long) SqlInt64.MaxValue)
                 return (long) SqlInt64.MaxValue - 1;
             return value;
         }
@@ -86,10 +94,10 @@ namespace FourRoads.Common.Sql
 
             // Finally remove any extra spaces from the string
             searchString = Regex.Replace(searchString, " {1,}", " ",
-                                         RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Multiline);
+                RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Multiline);
 
             // Do wild card replacements
-            
+
             switch (wildCardLocation)
             {
                 case WildCardLocation.Ignore:
@@ -108,15 +116,14 @@ namespace FourRoads.Common.Sql
                     break;
                 default:
                     searchString = Regex.Replace(searchString, "(%)", "\\$1", RegexOptions.Compiled | RegexOptions.Multiline);
-                    if ((int)wildCardLocation < searchString.Length)                        
-                        searchString = searchString.Substring(0, (int)wildCardLocation) + "%" + searchString.Substring((int)wildCardLocation);
+                    if ((int) wildCardLocation < searchString.Length)
+                        searchString = searchString.Substring(0, (int) wildCardLocation) + "%" + searchString.Substring((int) wildCardLocation);
                     else
                         searchString += "%";
                     break;
             }
-            
-            return fieldName + " LIKE '" + searchString + "' ESCAPE '\\' ";
 
+            return fieldName + " LIKE '" + searchString + "' ESCAPE '\\' ";
         }
 
         public object ObjectOrNull(object value)
@@ -136,23 +143,23 @@ namespace FourRoads.Common.Sql
         }
 
         /// <summary>
-        /// Convert dates to a dictionary sortable string
+        ///     Convert dates to a dictionary sortable string
         /// </summary>
         /// <param name="date"></param>
         /// <returns></returns>
         public string SafeSqlDateTimeFormat(DateTime date)
         {
-            return date.ToString(System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.SortableDateTimePattern);
+            return date.ToString(CultureInfo.CurrentCulture.DateTimeFormat.SortableDateTimePattern);
         }
 
         #endregion
 
-        #region ISqlDataHelper Members
+        #region IDataHelper Members
 
         public T GetValue<T>(object value)
         {
-            T defaultValue = default(T);
-            return GetValue<T>(value, defaultValue);
+            var defaultValue = default(T);
+            return GetValue(value, defaultValue);
         }
 
         public T GetValue<T>(object value, T defaultValue)
@@ -164,29 +171,27 @@ namespace FourRoads.Common.Sql
                     if (typeof(T).IsEnum)
                     {
                         if (value is int)
-                            return (T)Enum.ToObject(typeof(T), (int)value);
-                        else
-                        {
-                            EnumConverter converter = new EnumConverter(typeof(T));
-                            if (converter.CanConvertFrom(value.GetType()))
-                                return (T)converter.ConvertFrom(value);
-                        }
+                            return (T) Enum.ToObject(typeof(T), (int) value);
+                        var converter = new EnumConverter(typeof(T));
+                        if (converter.CanConvertFrom(value.GetType()))
+                            return (T) converter.ConvertFrom(value);
                     }
                     else
                     {
-                        TypeConverter converter = TypeDescriptor.GetConverter(typeof(T));
+                        var converter = TypeDescriptor.GetConverter(typeof(T));
                         if (converter.CanConvertFrom(value.GetType()))
-                            return (T)converter.ConvertFrom(value);
-                        else
-                            return (T)Convert.ChangeType(value, typeof(T));
+                            return (T) converter.ConvertFrom(value);
+                        return (T) Convert.ChangeType(value, typeof(T));
                     }
                 }
-                catch { }
+                catch
+                {
+                }
             }
             return defaultValue;
         }
 
-        public int GetInt32(object value , int defaultValue)
+        public int GetInt32(object value, int defaultValue)
         {
             if (Convert.IsDBNull(value) || value == null)
                 return defaultValue;
@@ -194,7 +199,7 @@ namespace FourRoads.Common.Sql
             return value.ToInt32(defaultValue);
         }
 
-        public Int16 GetInt16(object value, Int16 defaultValue)
+        public short GetInt16(object value, short defaultValue)
         {
             if (Convert.IsDBNull(value) || value == null)
                 return defaultValue;
@@ -210,7 +215,7 @@ namespace FourRoads.Common.Sql
             return value.ToInt64(defaultValue);
         }
 
-        public UInt32 GetUInt32(object value, UInt32 defaultValue)
+        public uint GetUInt32(object value, uint defaultValue)
         {
             if (Convert.IsDBNull(value) || value == null)
                 return defaultValue;
@@ -229,36 +234,48 @@ namespace FourRoads.Common.Sql
 
         #endregion
 
-        #region ISqlDataHelper Members
+        #region IDataHelper Members
 
         public T XmlDeserialize<T>(object value)
         {
-            return XmlDeserialize<T>(value, default(T));
+            return XmlDeserialize(value, default(T));
         }
 
         public T XmlDeserialize<T>(object value, T defaultValue)
         {
-            string xml = GetValue<string>(value); 
+            var xml = GetValue<string>(value);
+
             if (string.IsNullOrEmpty(xml))
                 return defaultValue;
 
-            return Injector.XmlDeserialize<T>(xml);
+            using (TextReader tr = new StringReader(xml))
+            {
+                using (XmlReader sr = XmlReader.Create(tr))
+                {
+                    return (T)_objectFactory.Get<XmlInjectedSerializationFactory>().Create(typeof(T)).Deserialize(sr);
+                }
+            }
+
         }
 
         public string XmlSerialize<T>(T value)
         {
-            return XmlSerialize<T>(value, null); 
+            return XmlSerialize(value, null);
         }
 
         public string XmlSerialize<T>(T value, string defaultValue)
         {
             if (value == null)
                 return defaultValue;
- 
-            return Injector.XmlSerialize<T>(value); 
+            StringBuilder sb = new StringBuilder(100);
+
+            using (StringWriter sw = new StringWriter(sb))
+            {
+                _objectFactory.Get<XmlInjectedSerializationFactory>().Create(typeof(T)).Serialize(sw , value);
+            }
+            return sb.ToString();
         }
 
         #endregion
-
     }
 }

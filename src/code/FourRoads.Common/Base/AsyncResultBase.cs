@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Threading;
 
-
 namespace FourRoads.Common
 {
     public class AsyncResultBase<T> : IAsyncResult, IDisposable
     {
-        private readonly object _asyncState;
         private readonly AsyncCallback _callback;
         private readonly object _syncRoot;
         private readonly ManualResetEvent _waitHandle;
@@ -21,10 +19,10 @@ namespace FourRoads.Common
         }
 
         public AsyncResultBase(AsyncCallback cb, object state,
-                               bool completed)
+            bool completed)
         {
             _callback = cb;
-            _asyncState = state;
+            AsyncState = state;
             _completed = completed;
             _completedSynchronously = completed;
             _waitHandle = new ManualResetEvent(false);
@@ -62,42 +60,6 @@ namespace FourRoads.Common
                 }
             }
         }
-
-        #region IAsyncResult Members
-
-        public object AsyncState
-        {
-            get { return _asyncState; }
-        }
-
-        public WaitHandle AsyncWaitHandle
-        {
-            get { return _waitHandle; }
-        }
-
-        public bool CompletedSynchronously
-        {
-            get
-            {
-                lock (_syncRoot)
-                {
-                    return _completedSynchronously;
-                }
-            }
-        }
-
-        public bool IsCompleted
-        {
-            get
-            {
-                lock (_syncRoot)
-                {
-                    return _completed;
-                }
-            }
-        }
-
-        #endregion
 
         #region IDisposable Members
 
@@ -148,7 +110,7 @@ namespace FourRoads.Common
         private void SignalCompletion()
         {
             _waitHandle.Set();
-            ThreadPool.QueueUserWorkItem(new WaitCallback(InvokeCallback));
+            ThreadPool.QueueUserWorkItem(InvokeCallback);
         }
 
         private void InvokeCallback(object state)
@@ -158,5 +120,38 @@ namespace FourRoads.Common
                 _callback(this);
             }
         }
+
+        #region IAsyncResult Members
+
+        public object AsyncState { get; }
+
+        public WaitHandle AsyncWaitHandle
+        {
+            get { return _waitHandle; }
+        }
+
+        public bool CompletedSynchronously
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _completedSynchronously;
+                }
+            }
+        }
+
+        public bool IsCompleted
+        {
+            get
+            {
+                lock (_syncRoot)
+                {
+                    return _completed;
+                }
+            }
+        }
+
+        #endregion
     }
 }

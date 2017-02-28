@@ -1,25 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Data;
 using FourRoads.Common.Interfaces;
-using Ninject.Parameters;
-  
+
 namespace FourRoads.Common.Sql
 {
     public abstract class EntityDataHandler<TEntity> : EntityDataPopulator<TEntity>, IEntityDataHandler<TEntity> where TEntity : class
     {
-        protected EntityDataHandler(ISqlDataHelper dataHelper, IPagedCollectionFactory pagedCollectionFactory)
-            : base(dataHelper, pagedCollectionFactory)
+        protected EntityDataHandler(IDataHelper dataHelper, IPagedCollectionFactory pagedCollectionFactory, IObjectFactory objectFactory)
+            : base(dataHelper, pagedCollectionFactory, objectFactory)
         {
         }
-       
+
         #region IEntityDataHandler<TEntity> Members
 
         public virtual void Add(IDBFactory factory, TEntity entity)
         {
-            throw new NotImplementedException(); 
+            throw new NotImplementedException();
         }
 
         public virtual void Update(IDBFactory factory, TEntity entity)

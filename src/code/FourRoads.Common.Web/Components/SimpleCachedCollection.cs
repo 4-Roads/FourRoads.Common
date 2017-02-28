@@ -3,17 +3,15 @@
 // // //     Copyright (c) 4 Roads Ltd.  All rights reserved.
 // // // </copyright>
 // // //------------------------------------------------------------------------------
+
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using FourRoads.Common.Interfaces;
-using System.Web;
 
 namespace FourRoads.Common
 {
-    public class SimpleCachedCollection<TContainerType, TDerivedType>
+    public class SimpleCachedCollection<TContainerType>
         where TContainerType : class, ICacheable
-        where TDerivedType : class, new()
     {
         #region Delegates
 
@@ -21,20 +19,21 @@ namespace FourRoads.Common
 
         #endregion
 
-        private readonly ICache _cacheProvider = Injector.Get<ICache>();
-        protected ReaderWriterLockSlim _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-        private RefreshSingle _getDataSingle; // Delegate to retrieve multiple items
         private string _derrivedTypeName;
+        private RefreshSingle _getDataSingle; // Delegate to retrieve multiple items
+        protected ReaderWriterLockSlim _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+
+        public SimpleCachedCollection(ICache cacheProvider)
+        {
+            CacheProvider = cacheProvider;
+        }
 
         protected RefreshSingle GetDataSingle
         {
             set { _getDataSingle = value; }
         }
 
-        protected ICache CacheProvider
-        {
-            get { return _cacheProvider; }
-        }
+        protected ICache CacheProvider { get; }
 
         protected string DerrivedTypeName
         {
@@ -42,26 +41,11 @@ namespace FourRoads.Common
             {
                 if (string.IsNullOrEmpty(_derrivedTypeName))
                 {
-                    _derrivedTypeName = typeof (TDerivedType).FullName;
+                    _derrivedTypeName = GetType().FullName;
                 }
 
                 return _derrivedTypeName;
             }
-        }
-
-        public static TDerivedType Cache()
-        {
-            ICache cacheProvider = Injector.Get<ICache>();
-            //Get this object from the cache of create a new one
-            TDerivedType obj = cacheProvider.Get<TDerivedType>(typeof(TDerivedType).FullName);
-
-            if (obj == null)
-            {
-                obj = new TDerivedType();
-                cacheProvider.Insert(typeof(TDerivedType).FullName, obj, new TimeSpan(0,12,0,0));
-            }
-
-            return obj;
         }
 
         public virtual TOverrideContainerType Get<TOverrideContainerType>(string id) where TOverrideContainerType : class
@@ -69,7 +53,7 @@ namespace FourRoads.Common
             return Get<TOverrideContainerType>(id, true);
         }
 
-        public virtual TOverrideContainerType Get<TOverrideContainerType>(string id , bool useCache) where TOverrideContainerType : class
+        public virtual TOverrideContainerType Get<TOverrideContainerType>(string id, bool useCache) where TOverrideContainerType : class
         {
             TContainerType result = null;
             if (id == null)
@@ -82,7 +66,7 @@ namespace FourRoads.Common
                 _lock.EnterReadLock();
                 try
                 {
-                    result = _cacheProvider.Get<TContainerType>(id);
+                    result = CacheProvider.Get<TContainerType>(id);
                 }
                 finally
                 {
@@ -99,7 +83,7 @@ namespace FourRoads.Common
                 else
                 {
                     AddItemToCacheProvider(result);
-                }                
+                }
             }
             else
             {
@@ -114,9 +98,9 @@ namespace FourRoads.Common
             return Get<TContainerType>(id, useCache);
         }
 
-        public virtual TContainerType Get(string id )
+        public virtual TContainerType Get(string id)
         {
-            return Get<TContainerType>(id , true);
+            return Get<TContainerType>(id, true);
         }
 
         public virtual void Add(TContainerType obj)
@@ -144,7 +128,7 @@ namespace FourRoads.Common
             _lock.EnterWriteLock();
             try
             {
-                 _cacheProvider.Remove(obj.CacheID);
+                CacheProvider.Remove(obj.CacheID);
             }
             finally
             {
@@ -154,10 +138,10 @@ namespace FourRoads.Common
 
         protected virtual void AddItemToCacheProvider(TContainerType obj)
         {
-           _lock.EnterWriteLock();
+            _lock.EnterWriteLock();
             try
             {
-                 _cacheProvider.Insert(obj , new string[]{DerrivedTypeName});
+                CacheProvider.Insert(obj, new[] {DerrivedTypeName});
             }
             finally
             {
@@ -170,7 +154,7 @@ namespace FourRoads.Common
             _lock.EnterWriteLock();
             try
             {
-                _cacheProvider.RemoveByTags(new string[] { DerrivedTypeName });
+                CacheProvider.RemoveByTags(new[] {DerrivedTypeName});
             }
             finally
             {

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FourRoads.Common.Web.Tests</RootNamespace>
     <AssemblyName>FourRoads.Common.Web.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -29,6 +29,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -38,6 +39,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -49,10 +51,21 @@
   -->
   <ItemGroup>
     <Compile Include="CacheCollectionTests.cs" />
+    <Compile Include="Directory.cs" />
+    <Compile Include="DirectoryCollection.cs" />
+    <Compile Include="DirectoryDataHandler.cs" />
+    <Compile Include="DirectoryDataProvider.cs" />
+    <Compile Include="DirectoryManager.cs" />
+    <Compile Include="DirectoryQuery.cs" />
+    <Compile Include="IDirectoryDataProvider.cs" />
+    <Compile Include="IDirectoryManager.cs" />
+    <Compile Include="Injector.cs" />
+    <Compile Include="MockCache.cs" />
+    <Compile Include="ManagerTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Ninject, Version=2.2.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Ninject.2.2.1.4\lib\net40-Full\Ninject.dll</HintPath>
+    <Reference Include="SimpleInjector, Version=3.3.2.0, Culture=neutral, PublicKeyToken=984cb50dea722e99, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\SimpleInjector.3.3.2\lib\net45\SimpleInjector.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -64,6 +77,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\code\FourRoads.Common.Sql\FourRoads.Common.Sql.csproj">
+      <Project>{D02275E0-71E5-40E4-9F63-3E15B4C7F8D1}</Project>
+      <Name>FourRoads.Common.Sql</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\code\FourRoads.Common.Web\FourRoads.Common.Web.csproj">
       <Project>{5F754B51-DFB2-4C4E-94B0-2F16A2656D49}</Project>
       <Name>FourRoads.Common.Web</Name>

@@ -1,85 +1,91 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Xml.Serialization;
+using FourRoads.Common.Interfaces;
 
 namespace FourRoads.Common
 {
-    public static class XmlInjectedSerializationFactory  
+    public class XmlInjectedSerializationFactory
     {
-        private static XmlSerializerFactory _factory = new XmlSerializerFactory();
+        private readonly XmlSerializerFactory _factory = new XmlSerializerFactory();
+        private readonly IObjectFactory _objectFactory;
 
-        public static XmlSerializer Create(Type type)
+        public XmlInjectedSerializationFactory(IObjectFactory objectFactory)
         {
-            Type realType = GetRealType(type);
-            XmlSerializer xs = _factory.CreateSerializer(realType);
+            _objectFactory = objectFactory;
+        }
+
+        public XmlSerializer Create(Type type)
+        {
+            var realType = GetRealType(type);
+            var xs = _factory.CreateSerializer(realType);
             if (xs == null)
                 xs = new XmlSerializer(realType);
             return xs;
         }
 
-        public static XmlSerializer Create(Type type, string defaultNamespace)
+        public XmlSerializer Create(Type type, string defaultNamespace)
         {
-            Type realType = GetRealType(type);
-            XmlSerializer xs = _factory.CreateSerializer(realType, defaultNamespace);
+            var realType = GetRealType(type);
+            var xs = _factory.CreateSerializer(realType, defaultNamespace);
             if (xs == null)
                 xs = new XmlSerializer(realType, defaultNamespace);
             return xs;
         }
 
-        public static XmlSerializer Create(XmlTypeMapping xmlTypeMapping)
+        public XmlSerializer Create(XmlTypeMapping xmlTypeMapping)
         {
-            XmlSerializer xs = _factory.CreateSerializer(xmlTypeMapping);
+            var xs = _factory.CreateSerializer(xmlTypeMapping);
             if (xs == null)
                 xs = new XmlSerializer(xmlTypeMapping);
             return xs;
         }
 
-        public static XmlSerializer Create(Type type, XmlAttributeOverrides overrides)
+        public XmlSerializer Create(Type type, XmlAttributeOverrides overrides)
         {
-            Type realType = GetRealType(type);
-            XmlSerializer xs = _factory.CreateSerializer(realType, overrides);
+            var realType = GetRealType(type);
+            var xs = _factory.CreateSerializer(realType, overrides);
             if (xs == null)
                 xs = new XmlSerializer(realType, overrides);
             return xs;
         }
 
-        public static XmlSerializer Create(Type type, System.Type[] extraTypes)
+        public XmlSerializer Create(Type type, Type[] extraTypes)
         {
-            Type realType = GetRealType(type);
-            System.Type[] realTypes = GetRealTypes(extraTypes); 
-            XmlSerializer xs = _factory.CreateSerializer(realType, realTypes);
+            var realType = GetRealType(type);
+            var realTypes = GetRealTypes(extraTypes);
+            var xs = _factory.CreateSerializer(realType, realTypes);
             if (xs == null)
                 xs = new XmlSerializer(realType, realTypes);
             return xs;
         }
 
-        public static XmlSerializer Create(Type type, XmlRootAttribute root)
+        public XmlSerializer Create(Type type, XmlRootAttribute root)
         {
-            Type realType = GetRealType(type);
-            XmlSerializer xs = _factory.CreateSerializer(realType, root);
+            var realType = GetRealType(type);
+            var xs = _factory.CreateSerializer(realType, root);
             if (xs == null)
                 xs = new XmlSerializer(realType, root);
             return xs;
         }
 
-        private static Type[] GetRealTypes(Type[] types)
+        private Type[] GetRealTypes(Type[] types)
         {
-            List<Type> realTypes = new List<Type>();
-            foreach (Type type in types)
+            var realTypes = new List<Type>();
+            foreach (var type in types)
                 realTypes.Add(GetRealType(type));
 
             return realTypes.ToArray();
         }
 
-        private static Type GetRealType(Type type)
+        private Type GetRealType(Type type)
         {
-            Type realType = type;
+            var realType = type;
 
             if (realType.IsInterface)
             {
-                object instance = Injector.Get(realType);
+                var instance = _objectFactory.Get(realType);
+
                 realType = instance.GetType();
             }
 

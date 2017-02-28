@@ -9,8 +9,82 @@ namespace FourRoads.Common
     public class ThreadSafeDictionary<TId, TValue> : IDictionary<TId, TValue>
         where TValue : class
     {
-        private Dictionary<TId, TValue> _dict = new Dictionary<TId, TValue>();
-        private ReaderWriterLockSlim _lock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
+        private readonly Dictionary<TId, TValue> _dict = new Dictionary<TId, TValue>();
+        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
+
+        /// <summary>
+        ///     Add a value with a certain key only if no other value with the same key is already present.
+        /// </summary>
+        public void AddIfDoesntContain(TId key, TValue value)
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                if (!_dict.ContainsKey(key))
+                    _dict.Add(key, value);
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
+        public void AddIfDoesntContainFunc(TId key, Func<TValue> values)
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                if (!_dict.ContainsKey(key))
+                    _dict.Add(key, values());
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
+        /// <summary>
+        ///     Returns a dictionary with an exclusive write lock on the original collection.
+        ///     Can be used to get quick and coherent access to the dictionary, without fine grained locking on each method.
+        /// </summary>
+        public LockedDictionary<TId, TValue> GetExclusiveDictionary()
+        {
+            _lock.EnterWriteLock();
+            return new LockedDictionary<TId, TValue>(_dict, _lock);
+        }
+
+        /// <summary>
+        ///     Allows to manipulate the dictionary directly after having acquired an exclusive write lock.
+        /// </summary>
+        public void ManipulateWithWriteLock(Action<IDictionary<TId, TValue>> operation)
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                operation(_dict);
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
+        /// <summary>
+        ///     Allows to manipulate the dictionary directly after having acquired a read lock.
+        ///     Be extra careful to NOT change the dictionary while accessing it.
+        /// </summary>
+        public void ManipulateWithReadLock(Action<IDictionary<TId, TValue>> operation)
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                operation(_dict);
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
 
         #region IDictionary<TId,TValue> Members
 
@@ -29,7 +103,7 @@ namespace FourRoads.Common
 
         public bool ContainsKey(TId key)
         {
-            bool ret = false;
+            var ret = false;
 
             _lock.EnterReadLock();
             try
@@ -54,7 +128,7 @@ namespace FourRoads.Common
                 try
                 {
                     ret = (from ele in _dict
-                           select ele.Key).ToArray();
+                        select ele.Key).ToArray();
                 }
                 finally
                 {
@@ -67,7 +141,7 @@ namespace FourRoads.Common
 
         public bool Remove(TId key)
         {
-            bool ret = false;
+            var ret = false;
 
             _lock.EnterWriteLock();
             try
@@ -85,7 +159,7 @@ namespace FourRoads.Common
         public bool TryGetValue(TId key, out TValue value)
         {
             TValue outVal = null;
-            bool ret = false;
+            var ret = false;
 
             _lock.EnterReadLock();
             try
@@ -112,8 +186,8 @@ namespace FourRoads.Common
                 {
                     ret = new TValue[_dict.Count];
 
-                    int i = 0;
-                    foreach (KeyValuePair<TId, TValue> couple in _dict)
+                    var i = 0;
+                    foreach (var couple in _dict)
                     {
                         ret[i] = couple.Value;
                         ++i;
@@ -180,7 +254,7 @@ namespace FourRoads.Common
 
         public bool Contains(KeyValuePair<TId, TValue> item)
         {
-            bool ret = false;
+            var ret = false;
 
             _lock.EnterReadLock();
             try
@@ -200,12 +274,12 @@ namespace FourRoads.Common
             _lock.EnterReadLock();
             try
             {
-                int arrLen = array.Length - arrayIndex;
+                var arrLen = array.Length - arrayIndex;
                 if (arrLen < _dict.Count)
                     throw new ArgumentException("Array too short.");
 
-                int i = arrayIndex;
-                foreach (KeyValuePair<TId, TValue> couple in _dict)
+                var i = arrayIndex;
+                foreach (var couple in _dict)
                 {
                     array[i] = couple;
                     ++arrayIndex;
@@ -221,7 +295,7 @@ namespace FourRoads.Common
         {
             get
             {
-                int ret = 0;
+                var ret = 0;
 
                 _lock.EnterReadLock();
                 try
@@ -244,7 +318,7 @@ namespace FourRoads.Common
 
         public bool Remove(KeyValuePair<TId, TValue> item)
         {
-            bool ret = false;
+            var ret = false;
 
             _lock.EnterWriteLock();
             try
@@ -272,80 +346,6 @@ namespace FourRoads.Common
         }
 
         #endregion
-
-        /// <summary>
-        ///   Add a value with a certain key only if no other value with the same key is already present.
-        /// </summary>
-        public void AddIfDoesntContain(TId key, TValue value)
-        {
-            _lock.EnterWriteLock();
-            try
-            {
-                if (!_dict.ContainsKey(key))
-                    _dict.Add(key, value);
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
-        }
-
-        public void AddIfDoesntContainFunc(TId key, Func<TValue> values)
-        {
-            _lock.EnterWriteLock();
-            try
-            {
-                if (!_dict.ContainsKey(key))
-                    _dict.Add(key, values());
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
-        }
-
-        /// <summary>
-        ///   Returns a dictionary with an exclusive write lock on the original collection.
-        ///   Can be used to get quick and coherent access to the dictionary, without fine grained locking on each method.
-        /// </summary>
-        public LockedDictionary<TId, TValue> GetExclusiveDictionary()
-        {
-            _lock.EnterWriteLock();
-            return new LockedDictionary<TId, TValue>(_dict, _lock);
-        }
-
-        /// <summary>
-        ///   Allows to manipulate the dictionary directly after having acquired an exclusive write lock.
-        /// </summary>
-        public void ManipulateWithWriteLock(Action<IDictionary<TId, TValue>> operation)
-        {
-            _lock.EnterWriteLock();
-            try
-            {
-                operation(_dict);
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
-        }
-
-        /// <summary>
-        ///   Allows to manipulate the dictionary directly after having acquired a read lock.
-        ///   Be extra careful to NOT change the dictionary while accessing it.
-        /// </summary>
-        public void ManipulateWithReadLock(Action<IDictionary<TId, TValue>> operation)
-        {
-            _lock.EnterReadLock();
-            try
-            {
-                operation(_dict);
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
-        }
 
         #region Helpers
 
@@ -379,18 +379,27 @@ namespace FourRoads.Common
     }
 
     /// <summary>
-    ///   Simple wrapper around a dictionary that releases a write lock when disposed.
+    ///     Simple wrapper around a dictionary that releases a write lock when disposed.
     /// </summary>
     public class LockedDictionary<TId, TValue> : IDictionary<TId, TValue>, IDisposable
     {
-        private IDictionary<TId, TValue> _dict;
-        private ReaderWriterLockSlim _lock;
+        private readonly IDictionary<TId, TValue> _dict;
+        private readonly ReaderWriterLockSlim _lock;
 
         public LockedDictionary(IDictionary<TId, TValue> dict, ReaderWriterLockSlim lck)
         {
             _dict = dict;
             _lock = lck;
         }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            _lock.ExitWriteLock();
+        }
+
+        #endregion
 
         #region IDictionary<TId,TValue> Members
 
@@ -476,29 +485,30 @@ namespace FourRoads.Common
         }
 
         #endregion
-
-        #region IDisposable Members
-
-        public void Dispose()
-        {
-            _lock.ExitWriteLock();
-        }
-
-        #endregion
     }
 
     /// <summary>
-    ///   Wrapper around an IEnumerator that releases a lock when disposed.
+    ///     Wrapper around an IEnumerator that releases a lock when disposed.
     /// </summary>
     internal class LockedEnumerator<TId, TValue> : IEnumerator<KeyValuePair<TId, TValue>>, IEnumerator
     {
-        private IEnumerator<KeyValuePair<TId, TValue>> _enumerator;
-        private ReaderWriterLockSlim _lock;
+        private readonly IEnumerator<KeyValuePair<TId, TValue>> _enumerator;
+        private readonly ReaderWriterLockSlim _lock;
 
         public LockedEnumerator(ReaderWriterLockSlim lockedLock, IEnumerator<KeyValuePair<TId, TValue>> enumerator)
         {
             _lock = lockedLock;
             _enumerator = enumerator;
+        }
+
+        public bool MoveNext()
+        {
+            return _enumerator.MoveNext();
+        }
+
+        public void Reset()
+        {
+            _enumerator.Reset();
         }
 
         #region IEnumerator<KeyValuePair<TId,TValue>> Members
@@ -530,15 +540,5 @@ namespace FourRoads.Common
         }
 
         #endregion
-
-        public bool MoveNext()
-        {
-            return _enumerator.MoveNext();
-        }
-
-        public void Reset()
-        {
-            _enumerator.Reset();
-        }
     }
 }

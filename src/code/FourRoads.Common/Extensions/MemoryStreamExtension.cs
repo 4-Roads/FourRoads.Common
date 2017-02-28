@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
-using System.IO;
 
 namespace FourRoads.Common.Extensions
 {
@@ -10,9 +7,9 @@ namespace FourRoads.Common.Extensions
     {
         public static string ConvertToUTF8String(this MemoryStream stream)
         {
-            UTF8Encoding encoding = new UTF8Encoding();
+            var encoding = new UTF8Encoding();
 
-            byte[] data = stream.ToArray();
+            var data = stream.ToArray();
 
             if (data.Length > 3)
                 return encoding.GetString(data);

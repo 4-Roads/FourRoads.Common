@@ -1,20 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace FourRoads.Common.Extensions
 {
-    public static class ConvertExtensions 
+    public static class ConvertExtensions
     {
-        public static int ToInt32(this object value , int defaultValue)
+        public static int ToInt32(this object value, int defaultValue)
         {
             if (value == null)
                 return defaultValue;
 
             try
             {
-                return System.Convert.ToInt32(value);
+                return Convert.ToInt32(value);
             }
             catch (Exception)
             {
@@ -29,7 +26,7 @@ namespace FourRoads.Common.Extensions
 
             try
             {
-                return System.Convert.ToInt32(value, provider);
+                return Convert.ToInt32(value, provider);
             }
             catch (Exception)
             {
@@ -37,14 +34,14 @@ namespace FourRoads.Common.Extensions
             }
         }
 
-        public static Int16 ToInt16(this object value, Int16 defaultValue)
+        public static short ToInt16(this object value, short defaultValue)
         {
             if (value == null)
                 return defaultValue;
 
             try
             {
-                return System.Convert.ToInt16(value);
+                return Convert.ToInt16(value);
             }
             catch (Exception)
             {
@@ -52,14 +49,14 @@ namespace FourRoads.Common.Extensions
             }
         }
 
-        public static Int16 ToInt16(this object value, IFormatProvider provider, Int16 defaultValue)
+        public static short ToInt16(this object value, IFormatProvider provider, short defaultValue)
         {
             if (value == null)
                 return defaultValue;
 
             try
             {
-                return System.Convert.ToInt16(value, provider);
+                return Convert.ToInt16(value, provider);
             }
             catch (Exception)
             {
@@ -67,14 +64,14 @@ namespace FourRoads.Common.Extensions
             }
         }
 
-        public static UInt32 ToUInt32(this object value, UInt32 defaultValue)
+        public static uint ToUInt32(this object value, uint defaultValue)
         {
             if (value == null)
                 return defaultValue;
 
             try
             {
-                return System.Convert.ToUInt32(value);
+                return Convert.ToUInt32(value);
             }
             catch (Exception)
             {
@@ -82,14 +79,14 @@ namespace FourRoads.Common.Extensions
             }
         }
 
-        public static UInt32 ToUInt32(this object value, IFormatProvider provider, UInt32 defaultValue)
+        public static uint ToUInt32(this object value, IFormatProvider provider, uint defaultValue)
         {
             if (value == null)
                 return defaultValue;
 
             try
             {
-                return System.Convert.ToUInt32(value, provider);
+                return Convert.ToUInt32(value, provider);
             }
             catch (Exception)
             {
@@ -104,7 +101,7 @@ namespace FourRoads.Common.Extensions
 
             try
             {
-                return System.Convert.ToInt64(value);
+                return Convert.ToInt64(value);
             }
             catch (Exception)
             {
@@ -119,7 +116,7 @@ namespace FourRoads.Common.Extensions
 
             try
             {
-                return System.Convert.ToInt64(value, provider);
+                return Convert.ToInt64(value, provider);
             }
             catch (Exception)
             {
@@ -134,7 +131,7 @@ namespace FourRoads.Common.Extensions
 
             try
             {
-                return System.Convert.ToString(value);
+                return Convert.ToString(value);
             }
             catch (Exception)
             {
@@ -149,7 +146,7 @@ namespace FourRoads.Common.Extensions
 
             try
             {
-                return System.Convert.ToString(value, provider);
+                return Convert.ToString(value, provider);
             }
             catch (Exception)
             {
@@ -164,7 +161,7 @@ namespace FourRoads.Common.Extensions
 
             try
             {
-                return System.Convert.ToBoolean(value);
+                return Convert.ToBoolean(value);
             }
             catch (Exception)
             {

@@ -18,11 +18,11 @@ namespace FourRoads.Common.Interfaces
     {
         uint PageIndex { get; set; }
         int PageSize { get; set; }
-		SortOrder SortOrder { get; set; }
+        SortOrder SortOrder { get; set; }
         string CacheKey { get; }
     }
 
-    public interface IPagedQueryV2 
+    public interface IPagedQueryV2
     {
         uint PageIndex { get; set; }
         int PageSize { get; set; }

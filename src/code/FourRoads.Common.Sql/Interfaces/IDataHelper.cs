@@ -20,7 +20,7 @@ namespace FourRoads.Common.Sql
         AtStart = 0
     }
 
-    public interface ISqlDataHelper
+    public interface IDataHelper
     {
         object MakeSafeValue(DateTime data, bool returnNull);
         object MakeSafeValue(int data);
@@ -31,14 +31,14 @@ namespace FourRoads.Common.Sql
         object ObjectOrNull(object value);
         object StringOrNull(string value);
         string SafeSqlDateTimeFormat(DateTime date);
-        
+
         T GetValue<T>(object value);
         T GetValue<T>(object value, T defaultValue);
 
         int GetInt32(object value, int defaultValue);
-        Int16 GetInt16(object value, Int16 defaultValue);
+        short GetInt16(object value, short defaultValue);
         long GetInt64(object value, long defaultValue);
-        UInt32 GetUInt32(object value, UInt32 defaultValue);
+        uint GetUInt32(object value, uint defaultValue);
         bool GetBoolean(object value, bool defaultValue);
 
         T XmlDeserialize<T>(object value);

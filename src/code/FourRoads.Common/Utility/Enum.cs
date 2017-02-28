@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.ComponentModel;
 
 namespace FourRoads.Common
 {
@@ -13,25 +12,25 @@ namespace FourRoads.Common
                 throw new InvalidCastException("Type T must be an Enum");
             if (value == null)
                 throw new NullReferenceException("value cannot be null");
-  
-            System.ComponentModel.EnumConverter converter = new System.ComponentModel.EnumConverter(typeof(T));
+
+            var converter = new EnumConverter(typeof(T));
             return converter.CanConvertFrom(value.GetType());
         }
 
-        public static T ConvertFrom(object value)   
+        public static T ConvertFrom(object value)
         {
             if (!typeof(T).IsEnum)
                 throw new InvalidCastException("Type T must be an Enum");
             if (value == null)
                 throw new NullReferenceException("value cannot be null");
-  
-            System.ComponentModel.EnumConverter converter = new System.ComponentModel.EnumConverter(typeof(T));
-            if (converter.CanConvertFrom(value.GetType())) 
-                return (T)converter.ConvertFrom(value);
-            else if (value is Int32)
-                return (T)Enum.ToObject(typeof(T), (int)value);
 
-            throw new InvalidCastException("Cannot convert type '" + value.GetType().Name + "' to type '" + typeof(T).Name + "'."); 
+            var converter = new EnumConverter(typeof(T));
+            if (converter.CanConvertFrom(value.GetType()))
+                return (T) converter.ConvertFrom(value);
+            if (value is int)
+                return (T) Enum.ToObject(typeof(T), (int) value);
+
+            throw new InvalidCastException("Cannot convert type '" + value.GetType().Name + "' to type '" + typeof(T).Name + "'.");
         }
 
         public static bool CanConvertTo<TypeTo>()
@@ -39,7 +38,7 @@ namespace FourRoads.Common
             if (!typeof(T).IsEnum)
                 throw new InvalidCastException("Type T must be an Enum");
 
-            System.ComponentModel.EnumConverter converter = new System.ComponentModel.EnumConverter(typeof(T));
+            var converter = new EnumConverter(typeof(T));
             return converter.CanConvertTo(typeof(TypeTo));
         }
 
@@ -48,19 +47,19 @@ namespace FourRoads.Common
             if (!typeof(T).IsEnum)
                 throw new InvalidCastException("Type T must be an Enum");
 
-            System.ComponentModel.EnumConverter converter = new System.ComponentModel.EnumConverter(typeof(T));
+            var converter = new EnumConverter(typeof(T));
             if (converter.CanConvertTo(typeof(TypeTo)))
-                return (TypeTo)converter.ConvertTo(value, typeof(TypeTo));
+                return (TypeTo) converter.ConvertTo(value, typeof(TypeTo));
 
-            throw new InvalidCastException("Cannot convert type '" + typeof(T).Name + "' to type '" + typeof(TypeTo).Name + "'."); 
+            throw new InvalidCastException("Cannot convert type '" + typeof(T).Name + "' to type '" + typeof(TypeTo).Name + "'.");
         }
 
         public static IList<T> GetValues()
         {
             IList<T> list = new List<T>();
-            foreach (object value in Enum.GetValues(typeof(T)))
+            foreach (var value in Enum.GetValues(typeof(T)))
             {
-                list.Add((T)value);
+                list.Add((T) value);
             }
             return list;
         }

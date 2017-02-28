@@ -6,9 +6,7 @@
 
 #region
 
-using System;
 using System.Text;
-using FourRoads.Common.Interfaces;
 
 #endregion
 
@@ -16,23 +14,16 @@ namespace FourRoads.Common.Sql
 {
     public abstract class SqlQueryBuilder
     {
-        private ISqlDataHelper _dataHelper = Injector.Get<ISqlDataHelper>();
-        private string _dbo;
-
-        public SqlQueryBuilder(string dbo)
+        public SqlQueryBuilder(IDataHelper dataHelper)
         {
-            _dbo = dbo;
+            DataHelper = dataHelper;
         }
 
-        public ISqlDataHelper DataHelper
-        {
-            get { return _dataHelper; }
-        }
+        public IDataHelper DataHelper { get; }
 
-        public string Dbo
-        {
-            get { return _dbo; }
-        }
+        public string Dbo { get; set; }
+
+        public string Database { get; set; }
 
         protected bool AppendString(bool requiresAnd, StringBuilder builder, string str)
         {
@@ -48,7 +39,15 @@ namespace FourRoads.Common.Sql
 
         protected string ObjectName(string dbObjectName)
         {
-            return string.Format("[{0}].[{1}]", Dbo, dbObjectName); 
+            var prepend = "";
+
+            if (!string.IsNullOrWhiteSpace(Database))
+                prepend = $"[{Database}].";
+
+            if (!string.IsNullOrWhiteSpace(Dbo))
+                prepend = prepend + $"[{Dbo}].";
+
+            return $"{prepend}[{dbObjectName}]";
         }
 
         protected abstract string AddQuerySelect();
@@ -61,7 +60,7 @@ namespace FourRoads.Common.Sql
 
         public virtual string BuildSQLQuery()
         {
-            StringBuilder bld = new StringBuilder(300);
+            var bld = new StringBuilder(300);
 
             bld.Append(AddQuerySelect());
 
@@ -70,29 +69,6 @@ namespace FourRoads.Common.Sql
             bld.Append(AddWhereClause());
 
             bld.Append(AddOrderBy());
-
-            return bld.ToString();
-        }
-
-        protected virtual string AddQueryCountSelect()
-        {
-            return null;
-        }
-
-        public virtual string BuildSQLCountQuery()
-        {
-            StringBuilder bld = new StringBuilder(300);
-
-            string queryCount = AddQueryCountSelect();
-            if (queryCount == null)
-                throw new NotImplementedException(
-                    "You must implement AddQueryCountSelect before calling BuildSQLCountQuery");
-
-            bld.Append(queryCount);
-
-            bld.Append(AddJoins());
-
-            bld.Append(AddWhereClause());
 
             return bld.ToString();
         }

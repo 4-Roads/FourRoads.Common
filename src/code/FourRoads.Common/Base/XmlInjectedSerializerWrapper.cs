@@ -3,19 +3,24 @@
 // //     Copyright (c) 4 Roads Ltd.  All rights reserved.
 // // </copyright>
 // //------------------------------------------------------------------------------
+
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
+using FourRoads.Common.Interfaces;
 
 namespace FourRoads.Common
 {
     public sealed class XmlInjectedSerializerWrapper<T> : IXmlSerializable
     {
-        public XmlInjectedSerializerWrapper()
+        private readonly IObjectFactory _objectFactory;
+
+        public XmlInjectedSerializerWrapper(IObjectFactory objectFactory)
         {
+            _objectFactory = objectFactory;
         }
 
-        public XmlInjectedSerializerWrapper(T t)
+        public XmlInjectedSerializerWrapper(IObjectFactory objectFactory, T t) : this(objectFactory)
         {
             Value = t;
         }
@@ -28,7 +33,7 @@ namespace FourRoads.Common
         {
             if (Value != null)
             {
-                XmlSerializer serializer = XmlInjectedSerializationFactory.Create(typeof (T));
+                var serializer = new XmlInjectedSerializationFactory(_objectFactory).Create(typeof(T));
                 serializer.Serialize(writer, Value);
             }
         }
@@ -37,7 +42,7 @@ namespace FourRoads.Common
         {
             try
             {
-                using (XmlReader subReader = XmlReader.Create(reader.ReadSubtree(), reader.Settings))
+                using (var subReader = XmlReader.Create(reader.ReadSubtree(), reader.Settings))
                 {
                     subReader.MoveToContent();
 
@@ -45,7 +50,7 @@ namespace FourRoads.Common
                     {
                         if (subReader.Read())
                         {
-                            XmlSerializer serializer = XmlInjectedSerializationFactory.Create(typeof (T));
+                            var serializer = new XmlInjectedSerializationFactory(_objectFactory).Create(typeof(T));
                             Value = (T) serializer.Deserialize(subReader);
                         }
                     }
@@ -59,7 +64,7 @@ namespace FourRoads.Common
 
         public XmlSchema GetSchema()
         {
-            return (null);
+            return null;
         }
 
         #endregion

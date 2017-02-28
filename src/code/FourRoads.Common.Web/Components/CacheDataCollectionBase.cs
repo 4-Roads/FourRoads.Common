@@ -1,51 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using FourRoads.Common.Interfaces;
 
 namespace FourRoads.Common
 {
-    public abstract class CachedDataCollectionBase<TItem, TQuery, TData, TCollection> :
-        CachedCollection<TItem, TQuery, TCollection>,
+    public abstract class CachedDataCollectionBase<TItem, TQuery, TData> :
+        CachedCollection<TItem, TQuery>,
         ICachedCollectionData<TItem, TQuery>
         where TItem : class, ICacheable
         where TQuery : class, IPagedQueryV2
-        where TCollection : class, new()
         where TData : class, IDataProvider<TItem, TQuery>
     {
+        private TData _dataProvider;
+        private IObjectFactory _objectFactory;
 
-        public CachedDataCollectionBase()
+        public CachedDataCollectionBase(IPagedCollectionFactory pagedCollectionFactory, ICache cacheProvider, IObjectFactory objectFactory) : base(pagedCollectionFactory, cacheProvider)
         {
-            GetDataQuery = new RefreshQuery(((ICachedCollectionData<TItem, TQuery>)this).GetQueryNoCache);
-            GetDataSingle = new RefreshSingle(((ICachedCollectionData<TItem, TQuery>)this).GetSingleNoCache);
+            GetDataQuery = ((ICachedCollectionData<TItem, TQuery>) this).GetQueryNoCache;
+            GetDataSingle = ((ICachedCollectionData<TItem, TQuery>) this).GetSingleNoCache;
         }
 
-        protected abstract void SetQuery(TQuery query, string cacheID);
-
-        private TData _dataProvider;
         protected TData DataProvider
         {
             get
             {
                 if (_dataProvider == null)
-                    _dataProvider = Injector.Get<TData>();
+                    _dataProvider = _objectFactory.Get<TData>();
 
                 return _dataProvider;
             }
         }
 
-        
+        protected abstract void SetQuery(TQuery query, string cacheID);
+
         #region ICachedCollectionData<TItem,TQuery> Members
 
         TItem ICachedCollectionData<TItem, TQuery>.GetSingleNoCache(string cacheID)
         {
             //System.Diagnostics.Debug.WriteLine(string.Format("GetSingleNoCache:{0}", cacheID));
-
-            TQuery query = Injector.Get<TQuery>();
+            var query = _objectFactory.Get<TQuery>();
             SetQuery(query, cacheID);
             query.PageSize = 1;
-            return (TItem)DataProvider.Get(query).Items.FirstOrDefault(); ;
+            return DataProvider.Get(query).Items.FirstOrDefault();
+            ;
         }
 
         IPagedCollection<TItem> ICachedCollectionData<TItem, TQuery>.GetQueryNoCache(TQuery query)

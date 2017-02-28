@@ -10,17 +10,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FourRoads.Common.Interfaces;
-using Ninject.Parameters;
 
 #endregion
 
 namespace FourRoads.Common
 {
-    public class CachedCollection<TContainerType, TQueryType, TDerivedType> :
-        SimpleCachedCollection<TContainerType, TDerivedType>
+    public class CachedCollection<TContainerType, TQueryType> :
+        SimpleCachedCollection<TContainerType>
         where TQueryType : class, IPagedQueryV2
         where TContainerType : class, ICacheable
-        where TDerivedType : class, new()
     {
         #region Delegates
 
@@ -29,12 +27,11 @@ namespace FourRoads.Common
         #endregion
 
         private RefreshQuery _getDataQuery; //Delegate to retrieve a single item
-        private short _reQueryHueristicMarginPercentage = 80;
-        private IPagedCollectionFactory _pagedCollectionFactory = null;
+        private readonly IPagedCollectionFactory _pagedCollectionFactory;
 
-        protected CachedCollection()
+        public CachedCollection(IPagedCollectionFactory pagedCollectionFactory, ICache cacheProvider) : base(cacheProvider)
         {
-            _pagedCollectionFactory = Injector.Get<IPagedCollectionFactory>();
+            _pagedCollectionFactory = pagedCollectionFactory;
         }
 
         protected RefreshQuery GetDataQuery
@@ -43,13 +40,10 @@ namespace FourRoads.Common
         }
 
         /// <summary>
-        /// This property controls the limit as to how many items missing relative to page size requested before a full re-query is performed
+        ///     This property controls the limit as to how many items missing relative to page size requested before a full
+        ///     re-query is performed
         /// </summary>
-        public short ReQueryHueristicMarginPercentage
-        {
-            get { return _reQueryHueristicMarginPercentage; }
-            set { _reQueryHueristicMarginPercentage = value; }
-        }
+        public short ReQueryHueristicMarginPercentage { get; set; } = 80;
 
         protected Dictionary<string, ResultData<string>> GetCachedQueries()
         {
@@ -72,21 +66,21 @@ namespace FourRoads.Common
 
             if (!query.UseCache)
             {
-                IPagedCollection<TContainerType> noCacheResults = _getDataQuery(query);
+                var noCacheResults = _getDataQuery(query);
 
-                return _pagedCollectionFactory.CreatedPagedCollection(query.PageIndex,query.PageSize,noCacheResults.Items.Cast<TOverrideContainerType>(),noCacheResults.TotalRecords);
+                return _pagedCollectionFactory.CreatedPagedCollection(query.PageIndex, query.PageSize, noCacheResults.Items.Cast<TOverrideContainerType>(), noCacheResults.TotalRecords);
             }
 
             IPagedCollection<TOverrideContainerType> results = null;
 
             ResultData<string> resultInfo = null;
-            bool hasResultsList = false;
-            string cacheKey = query.CacheKey;
+            var hasResultsList = false;
+            var cacheKey = query.CacheKey;
 
             _lock.EnterReadLock();
             try
             {
-                Dictionary<string, ResultData<string>> cachedQueries = GetCachedQueries();
+                var cachedQueries = GetCachedQueries();
 
                 hasResultsList = cachedQueries.ContainsKey(cacheKey) && cachedQueries.TryGetValue(cacheKey, out resultInfo);
             }
@@ -105,11 +99,11 @@ namespace FourRoads.Common
             //database rather than many single item queries
             if (CheckHeuristicInRange(resultInfo))
             {
-                List<TContainerType> items = new List<TContainerType>();
+                var items = new List<TContainerType>();
 
-                for (int i = 0; i < resultInfo.Keys.Length; i++)
+                for (var i = 0; i < resultInfo.Keys.Length; i++)
                 {
-                    TContainerType singleItem = Get(resultInfo.Keys[i]);
+                    var singleItem = Get(resultInfo.Keys[i]);
 
                     if (singleItem != null)
                     {
@@ -138,12 +132,12 @@ namespace FourRoads.Common
 
             bool returnResult;
 
-            int target = Math.Min(resultInfo.TotalRecords, resultInfo.PageSize);
-            int actual = 0;
-            int keyLength = resultInfo.Keys.Length;
-            for (int i = 0; i < keyLength; i++)
+            var target = Math.Min(resultInfo.TotalRecords, resultInfo.PageSize);
+            var actual = 0;
+            var keyLength = resultInfo.Keys.Length;
+            for (var i = 0; i < keyLength; i++)
             {
-                TContainerType result = CacheProvider.Get<TContainerType>(resultInfo.Keys[i]);
+                var result = CacheProvider.Get<TContainerType>(resultInfo.Keys[i]);
 
                 if (result != null)
                 {
@@ -158,7 +152,7 @@ namespace FourRoads.Common
 
             if (actual > 0 && target > 0)
             {
-                percentage = (actual/target)*100;
+                percentage = actual/target*100;
             }
 
             returnResult = percentage > ReQueryHueristicMarginPercentage;
@@ -201,15 +195,15 @@ namespace FourRoads.Common
         {
             IPagedCollection<TOverrideContainerType> overrideResults = null;
 
-            List<string> keys = new List<string>();
+            var keys = new List<string>();
             IPagedCollection<TContainerType> results = null;
-            string cacheKey = query.CacheKey;
+            var cacheKey = query.CacheKey;
 
             results = _getDataQuery(query);
 
-            List<TContainerType> replacementCollection = new List<TContainerType>();
+            var replacementCollection = new List<TContainerType>();
 
-            foreach (TContainerType item in results.Items)
+            foreach (var item in results.Items)
             {
                 keys.Add(item.CacheID);
                 replacementCollection.Add(item);
@@ -224,12 +218,12 @@ namespace FourRoads.Common
                 }
             }
 
-            ResultData<string> resultInfo = new ResultData<string>(keys.ToArray(), query.PageIndex, query.PageSize, results.TotalRecords);
+            var resultInfo = new ResultData<string>(keys.ToArray(), query.PageIndex, query.PageSize, results.TotalRecords);
 
             _lock.EnterWriteLock();
             try
             {
-                Dictionary<string, ResultData<string>> cachedQueries = GetCachedQueries();
+                var cachedQueries = GetCachedQueries();
 
                 if (cachedQueries.ContainsKey(cacheKey))
                 {
@@ -260,7 +254,7 @@ namespace FourRoads.Common
         public void ClearQueries()
         {
             //Clear all of the queries
-            Dictionary<string, ResultData<string>> cachedQueries = GetCachedQueries();
+            var cachedQueries = GetCachedQueries();
 
             cachedQueries.Clear();
 

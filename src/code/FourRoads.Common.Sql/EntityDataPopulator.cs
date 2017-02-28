@@ -1,41 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
 using FourRoads.Common.Interfaces;
-using Ninject.Parameters;
 
 namespace FourRoads.Common.Sql
 {
-    public abstract class EntityDataPopulator<TEntity> : IEntityDataPopulator<TEntity> where TEntity : class 
+    public abstract class EntityDataPopulator<TEntity> : IEntityDataPopulator<TEntity> where TEntity : class
     {
-        public EntityDataPopulator(ISqlDataHelper dataHelper , IPagedCollectionFactory pagedCollectionFactory)
+        public EntityDataPopulator(IDataHelper dataHelper, IPagedCollectionFactory pagedCollectionFactory, IObjectFactory objectFactory)
         {
             if (dataHelper == null)
                 throw new ArgumentNullException("dataHelper");
 
             if (pagedCollectionFactory == null)
-                throw new ArgumentNullException("pagedCollectionFactory");     
+                throw new ArgumentNullException("pagedCollectionFactory");
 
-            _dataHelper = dataHelper;
-            _pagedCollectionFactory = pagedCollectionFactory;
+            if (pagedCollectionFactory == null)
+                throw new ArgumentNullException("objectFactory");
+
+            DataHelper = dataHelper;
+            PagedCollectionFactory = pagedCollectionFactory;
+            ObjectFactory = objectFactory;
         }
 
-        private IPagedCollectionFactory _pagedCollectionFactory = null;
-        private ISqlDataHelper _dataHelper = null;
-
-        public IPagedCollectionFactory PagedCollectionFactory {
-            get { return _pagedCollectionFactory; }
-        }
-
-        public ISqlDataHelper DataHelper
-        {
-            get 
-            {
-                return _dataHelper;
-            }
-        }
+        private IObjectFactory ObjectFactory { get; }
+        public IPagedCollectionFactory PagedCollectionFactory { get; }
+        public IDataHelper DataHelper { get; }
 
         public virtual TEntity CreateEntityWithRead(IDataReader dataReader)
         {
@@ -47,7 +37,7 @@ namespace FourRoads.Common.Sql
 
         public virtual TEntity CreateEntity(IDataReader dataReader)
         {
-            TEntity entity = Injector.Get<TEntity>();
+            var entity = ObjectFactory.Get<TEntity>();
             PopulateEntityData(entity, dataReader);
             return entity;
         }
@@ -56,29 +46,31 @@ namespace FourRoads.Common.Sql
 
         public virtual IPagedCollection<TEntity> CreateEntityCollection(IPagedQueryV2 query, IDataReader dataReader, int total)
         {
-            IEnumerable<TEntity> items = CreateEntityCollection(dataReader);
+            var items = CreateEntityCollection(dataReader);
 
-            return _pagedCollectionFactory.CreatedPagedCollection(query.PageIndex, query.PageSize, items ,  total > 0 ? total : default(int?) );
+            return PagedCollectionFactory.CreatedPagedCollection(query.PageIndex, query.PageSize, items, total > 0 ? total : default(int?));
         }
 
         public virtual IPagedCollection<TEntity> CreateEntityCollection(IPagedQueryV2 query, IDataReader dataReader, IDataParameter totalParameter)
         {
-            IEnumerable<TEntity> items = CreateEntityCollection(dataReader);
- 
+            var items = CreateEntityCollection(dataReader);
+
             //To get the output parameter the redare must be closed
             if (totalParameter.Direction == ParameterDirection.ReturnValue)
                 dataReader.Close();
             else
-               while (totalParameter.Value == null && dataReader.NextResult()) { }
+                while (totalParameter.Value == null && dataReader.NextResult())
+                {
+                }
 
-            int totalItems = totalParameter.Value != null ? (int)totalParameter.Value : 0;
+            var totalItems = totalParameter.Value != null ? (int) totalParameter.Value : 0;
 
-            return _pagedCollectionFactory.CreatedPagedCollection(query.PageIndex, query.PageSize, items, totalItems);
+            return PagedCollectionFactory.CreatedPagedCollection(query.PageIndex, query.PageSize, items, totalItems);
         }
 
         public virtual IEnumerable<TEntity> CreateEntityCollection(IDataReader dataReader)
         {
-            List<TEntity> list = new List<TEntity>();
+            var list = new List<TEntity>();
             while (dataReader.Read())
             {
                 list.Add(CreateEntity(dataReader));

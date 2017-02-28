@@ -16,13 +16,13 @@ namespace FourRoads.Common
     {
         public static bool MayBeOfType<T>(Type objectType)
         {
-            if (objectType == typeof (T))
+            if (objectType == typeof(T))
                 return true;
-            else if (objectType.BaseType == typeof (T))
+            if (objectType.BaseType == typeof(T))
                 return true;
-            else if (objectType.GetNestedType(typeof (T).Name) != null)
+            if (objectType.GetNestedType(typeof(T).Name) != null)
                 return true;
-            else if (objectType.GetInterface(typeof (T).Name) != null)
+            if (objectType.GetInterface(typeof(T).Name) != null)
                 return true;
             return false;
         }
@@ -32,7 +32,7 @@ namespace FourRoads.Common
             try
             {
                 //Get the type
-                Type objectType = Type.GetType(type);
+                var objectType = Type.GetType(type);
                 if (objectType != null)
                 {
                     return Activator.CreateInstance(objectType, args);
@@ -50,7 +50,7 @@ namespace FourRoads.Common
             try
             {
                 //Get the type
-                Type objectType = Type.GetType(type);
+                var objectType = Type.GetType(type);
                 if (objectType != null)
                     return Activator.CreateInstance(objectType);
             }
@@ -66,15 +66,15 @@ namespace FourRoads.Common
             try
             {
                 //Get the type
-                Type objectType = typeof (T);
+                var objectType = typeof(T);
                 if (objectType != null)
                     return Activator.CreateInstance(objectType) as T;
             }
             catch (Exception ex)
             {
-                throw new Exception("Could not load object of type '" + typeof (T).Name + "' : " + ex.Message, ex);
+                throw new Exception("Could not load object of type '" + typeof(T).Name + "' : " + ex.Message, ex);
             }
-            throw new Exception("Could not find object of type '" + typeof (T).Name + "'");
+            throw new Exception("Could not find object of type '" + typeof(T).Name + "'");
         }
 
         public static T CreateObject<T>(params object[] args) where T : class
@@ -82,7 +82,7 @@ namespace FourRoads.Common
             try
             {
                 //Get the type
-                Type objectType = typeof (T);
+                var objectType = typeof(T);
                 if (objectType != null)
                 {
                     return Activator.CreateInstance(objectType, args) as T;
@@ -90,9 +90,9 @@ namespace FourRoads.Common
             }
             catch (Exception ex)
             {
-                throw new Exception("Could not load object of type '" + typeof (T).Name + "' : " + ex.Message, ex);
+                throw new Exception("Could not load object of type '" + typeof(T).Name + "' : " + ex.Message, ex);
             }
-            throw new Exception("Could not find object of type '" + typeof (T).Name + "'");
+            throw new Exception("Could not find object of type '" + typeof(T).Name + "'");
         }
     }
 }

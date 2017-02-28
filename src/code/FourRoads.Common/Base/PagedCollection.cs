@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using FourRoads.Common.Interfaces;
 
 namespace FourRoads.Common
 {
     public class PagedCollection<TItem> : IPagedCollection<TItem>, ICollection<TItem>, IEnumerable<TItem>, IEnumerable
     {
+        private ICollection<TItem> _Items;
+
         private PagedCollection()
         {
-
         }
 
         public PagedCollection(uint pageIndex, int pageSize, int totalRecords, IEnumerable<TItem> items)
@@ -19,9 +18,9 @@ namespace FourRoads.Common
             PageIndex = pageIndex;
             PageSize = pageSize;
             TotalRecords = totalRecords;
-      
+
             if (items != null)
-                _Items = items.ToList<TItem>();
+                _Items = items.ToList();
         }
 
         public PagedCollection(ICollection<TItem> itemCollection, uint pageIndex, int pageSize, int totalRecords)
@@ -34,23 +33,39 @@ namespace FourRoads.Common
                 _Items = itemCollection;
         }
 
-        ICollection<TItem> _Items;
+        #region IEnumerable<TItem> Members
+
+        public IEnumerator<TItem> GetEnumerator()
+        {
+            return InternalItems.GetEnumerator();
+        }
+
+        #endregion
+
+        #region IEnumerable Members
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return InternalItems.GetEnumerator();
+        }
+
+        #endregion
 
         #region IPagedCollection<TItem> Members
 
         public uint PageIndex { get; set; }
-        public int PageSize {get; set; }
+        public int PageSize { get; set; }
         public int TotalRecords { get; protected set; }
 
-        public IEnumerable<TItem> Items 
+        public IEnumerable<TItem> Items
         {
             get { return InternalItems; }
-            set { InternalItems = value.ToList<TItem>(); }
+            set { InternalItems = value.ToList(); }
         }
 
         public IPagedCollection<TCast> Cast<TCast>()
         {
-            PagedCollection<TCast> casted = new PagedCollection<TCast>();
+            var casted = new PagedCollection<TCast>();
 
             casted.PageIndex = PageIndex;
             casted.PageSize = PageSize;
@@ -73,7 +88,7 @@ namespace FourRoads.Common
             set
             {
                 if (value != null)
-                    _Items = value.ToList<TItem>();
+                    _Items = value.ToList();
                 else
                     _Items = null;
             }
@@ -85,7 +100,7 @@ namespace FourRoads.Common
 
         public void Add(TItem item)
         {
-            InternalItems.Add(item); 
+            InternalItems.Add(item);
         }
 
         public void Clear()
@@ -100,7 +115,7 @@ namespace FourRoads.Common
 
         public void CopyTo(TItem[] array, int arrayIndex)
         {
-            InternalItems.CopyTo(array, arrayIndex); 
+            InternalItems.CopyTo(array, arrayIndex);
         }
 
         public int Count
@@ -116,24 +131,6 @@ namespace FourRoads.Common
         public bool Remove(TItem item)
         {
             return InternalItems.Remove(item);
-        }
-
-        #endregion
-
-        #region IEnumerable<TItem> Members
-
-        public IEnumerator<TItem> GetEnumerator()
-        {
-            return InternalItems.GetEnumerator();
-        }
-
-        #endregion
-
-        #region IEnumerable Members
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return InternalItems.GetEnumerator(); 
         }
 
         #endregion

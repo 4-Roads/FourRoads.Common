@@ -9,7 +9,7 @@ namespace FourRoads.Common
         public IPagedCollection<TItem> CreatedPagedCollection<TItem>(uint pageIndex, int pageSize, IEnumerable<TItem> items, int? totalRecords = null)
         {
             ICollection<TItem> collection = items.ToList();
- 
+
             int total;
 
             if (totalRecords.HasValue)
@@ -17,7 +17,7 @@ namespace FourRoads.Common
             else
                 total = collection.Count;
 
-            return new PagedCollection<TItem>(collection , pageIndex, pageSize, total);
+            return new PagedCollection<TItem>(collection, pageIndex, pageSize, total);
         }
     }
 }

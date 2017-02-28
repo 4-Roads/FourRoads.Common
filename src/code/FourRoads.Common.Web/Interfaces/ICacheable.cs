@@ -1,7 +1,4 @@
-﻿using System;
-using System.Web.Caching;
-
-namespace FourRoads.Common.Interfaces
+﻿namespace FourRoads.Common.Interfaces
 {
     public interface ICacheable
     {
@@ -9,7 +6,7 @@ namespace FourRoads.Common.Interfaces
 
         int CacheRefreshInterval { get; }
 
-    	string[] CacheTags { get; }
+        string[] CacheTags { get; }
 
         CacheScopeOption CacheScope { get; }
     }
