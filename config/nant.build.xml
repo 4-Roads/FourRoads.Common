@@ -10,7 +10,7 @@
 	
 	<target name="all"
 					description="The main target for full build process execution."
-					depends="clean get configure-compile compile" />
+					depends="clean get compile" />
 
 	<target name="distribute" description="Distribute assets">
 		<echo message="Calling 'distribute' target" />
