@@ -74,6 +74,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FourRoads.Common.Sql\FourRoads.Common.Sql.csproj">
+      <Project>{d02275e0-71e5-40e4-9f63-3e15b4c7f8d1}</Project>
+      <Name>FourRoads.Common.Sql</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FourRoads.Common\FourRoads.Common.csproj">
       <Project>{E667AFEC-4EA1-4E09-AC04-B2076231BE05}</Project>
       <Name>FourRoads.Common</Name>
