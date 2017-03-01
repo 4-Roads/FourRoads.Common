@@ -10,7 +10,7 @@
 	
 	<target name="all"
 					description="The main target for full build process execution."
-					depends="clean get version-octopus configure-compile compile publish-octopus" />
+					depends="clean get configure-compile compile" />
 
 	<target name="distribute" description="Distribute assets">
 		<echo message="Calling 'distribute' target" />
