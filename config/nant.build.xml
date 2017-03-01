@@ -10,12 +10,20 @@
 	
 	<target name="all"
 					description="The main target for full build process execution."
-					depends="clean get compile" />
+					depends="clean get compile publish-octopus" />
 
 	<target name="distribute" description="Distribute assets">
 		<echo message="Calling 'distribute' target" />
 	</target>
 
+	<target name="publish-octopus" description="Place the assets in agreed location.">
+		<move todir="${core.publish}\${sys.build}" flatten="true">
+			<fileset basedir="${core.output}">
+				<include name="**\*.nupkg" />
+			</fileset>
+		</move>
+	</target>
+	
 	<target name="help">
 		<echo message="The skeleton file for the build process is designed to execute the following targets in turn:" />
 		<echo message="-- clean" />
