@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<project name="Longbridge.Telligent" default="help" xmlns="http://nant.sf.net/release/0.85/nant.xsd">
+	<description>Build file for the "4 Roads Common" solution.</description>
+	<include buildfile="common\build.properties.xml" />
+	<include buildfile="common\build.targets.xml" />
+
+	<!-- NAnt properties -->
+	<property name="nant.settings.targetframework" value="net-4.6" />
+	<property name="nant.settings.currentframework" value="net-4.5" />
+	
+	<target name="all"
+					description="The main target for full build process execution."
+					depends="clean get version-octopus configure-dbghost dbbuild build-dbinstaller configure-compile compile publish-octopus" />
+
+	<target name="version-octopus" description="Version .nuspec files for packaging later" depends="version">
+		<if test="${file::exists(core.source + '\code\' + core.webfolder + '\' + core.webproject + '.nuspec')}">
+			<xmlpoke file="${core.source}\code\${core.webfolder}\${core.webproject}.nuspec"
+					 xpath="/x:package/x:metadata/x:version"
+					 value="${sys.version.file}">
+				<namespaces>
+					<namespace prefix="x" uri="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd" />
+				</namespaces>
+			</xmlpoke>
+		</if>
+		<if test="${file::exists(core.source + '\infrastructure\Longbridge.Telligent.JobService\Longbridge.Telligent.JobService.nuspec')}">
+			<xmlpoke file="${core.source}\infrastructure\Longbridge.Telligent.JobService\Longbridge.Telligent.JobService.nuspec"
+					 xpath="/x:package/x:metadata/x:version"
+					 value="${sys.version.file}">
+				<namespaces>
+					<namespace prefix="x" uri="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd" />
+				</namespaces>
+			</xmlpoke>
+		</if>
+		<if test="${file::exists(core.source + '\infrastructure\Longbridge.Telligent.Search\Longbridge.Telligent.Search.nuspec')}">
+			<xmlpoke file="${core.source}\infrastructure\Longbridge.Telligent.Search\Longbridge.Telligent.Search.nuspec"
+					 xpath="/x:package/x:metadata/x:version"
+					 value="${sys.version.file}">
+				<namespaces>
+					<namespace prefix="x" uri="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd" />
+				</namespaces>
+			</xmlpoke>
+		</if>
+		<if test="${file::exists(core.source + '\sql\Longbridge.Telligent.Sql.nuspec')}">
+			<xmlpoke file="${core.source}\sql\Longbridge.Telligent.Sql.nuspec"
+					 xpath="/x:package/x:metadata/x:version"
+					 value="${sys.version.file}">
+				<namespaces>
+					<namespace prefix="x" uri="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd" />
+				</namespaces>
+			</xmlpoke>
+		</if>
+	</target>
+
+	<target name="configure-dbghost">
+		<loadtasks assembly="${core.tools}\nantcontrib\NAnt.Contrib.Tasks.dll" />
+		<loadtasks assembly="${core.tools}\FourRoads.Common\FourRoads.NAnt.dll" />
+		<property name="dbghost.builddatabasetemplatescript" value="${core.source}\sql\Custom\DropCreateDatabase.sql" />
+
+		<choose>
+			<when test="${sys.mode == 'automated' and property::exists('CCNetLabel')}">
+				<echo message="Reverting ${dbghost.changemanager.templateconfigurationpath}" />
+				<exec program="${core.tools}\subversion\svn.exe"
+					commandline="revert ${dbghost.changemanager.templateconfigurationpath}"
+					failonerror="false"
+					verbose="false" />
+			
+				<echo message="Reverting ${dbghost.builddatabasetemplatescript}" />
+				<exec program="${core.tools}\subversion\svn.exe"
+					commandline="revert ${dbghost.builddatabasetemplatescript}"
+					failonerror="false"
+					verbose="false" />
+			</when>
+			<otherwise>
+				<delete file="${dbghost.changemanager.templateconfigurationpath}" />
+				<copy file="${core.workingSource + '\sql\' + dbghost.changemanager.templateconfigurationfile + '.template'}"
+				  tofile="${dbghost.changemanager.templateconfigurationpath}" />
+				<echo message="Copied ${core.workingSource + '\sql\' + dbghost.changemanager.templateconfigurationfile + '.template'} to ${dbghost.changemanager.templateconfigurationpath}" />
+			</otherwise>
+		</choose>
+		<trycatch>
+			<try>
+				<xmloverride basefile="${dbghost.changemanager.templateconfigurationpath}"
+								overridefile="${core.source}\sql\builddatabase_override.${sys.mode}.config"
+								verbose="true" />
+				<echo message="Applied ${core.source}\sql\builddatabase_override.${sys.mode}.config to ${dbghost.changemanager.templateconfigurationpath}" />
+			</try>
+			<catch>
+				<echo message="Could not override ${dbghost.changemanager.templateconfigurationpath}" />
+			</catch>
+		</trycatch>
+	</target>
+
+	<target name="configure-compile" description="Configure compilation settings" depends="configure-web">
+		<copy file="${core.source}\code\${core.webfolder}\connectionStrings.config.template"
+				tofile="${core.source}\code\${core.webfolder}\connectionStrings.config" />
+		<!-- Generate version file -->
+		<mkdir dir="${core.source}\code\${core.webfolder}\Properties" />
+		<echo file="${core.source}\code\${core.webfolder}\Properties\version.txt" message="${sys.version.informational}" />
+	</target>
+
+	<target name="setup-tests" description="Set up application tests">
+		<echo message="Copying all web files" />
+		<copy todir="${core.testing}">
+			<fileset basedir="${core.source}\code\${core.webfolder}">
+				<include name="**" />
+				<exclude name="*.csproj" />
+			</fileset>
+		</copy>
+		<mkdir dir="${core.testing}\bin" />
+		<copy todir="${core.testing}\bin">
+			<fileset basedir="${core.output}\_PublishedWebsites\${core.webproject}\bin">
+				<include name="**" />
+			</fileset>
+		</copy>
+		<copy todir="${core.testing}\bin" overwrite="true">
+			<fileset basedir="${core.source}\lib\TC">
+				<include name="Ninject*" />
+			</fileset>
+		</copy>
+		<copy todir="${core.output}" overwrite="true">
+			<fileset basedir="${core.source}\lib\TC">
+				<include name="Ninject*" />
+			</fileset>
+		</copy>
+
+		<choose>
+			<when test="${sys.mode == 'automated'}">
+				<copy file="${core.source}\tests\Longbridge.Telligent.Tests\appSettings.config.template"
+						tofile="${core.source}\tests\Longbridge.Telligent.Tests\appSettings.config" />
+				<copy file="${core.source}\tests\Longbridge.Telligent.Tests\connectionstrings.config.template"
+						tofile="${core.source}\tests\Longbridge.Telligent.Tests\connectionstrings.config" />
+				<if test="${not property::exists('CCNetLabel')}">
+					<trycatch>
+						<try>
+							<xmloverride basefile="${core.source}\tests\Longbridge.Telligent.Tests\appSettings.config"
+											overridefile="${core.source}\tests\Longbridge.Telligent.Tests\appSettings_override.teamcity.config"
+											verbose="true" />
+							<echo message="Applied override to ${core.source}\tests\Longbridge.Telligent.Tests\appSettings.config" />
+						</try>
+						<catch>
+							<echo message="Could not override ${core.source}\tests\Longbridge.Telligent.Tests\appSettings.config" />
+						</catch>
+					</trycatch>
+					<trycatch>
+						<try>
+							<xmloverride basefile="${core.source}\tests\Longbridge.Telligent.Tests\applicationhost.config"
+											overridefile="${core.source}\tests\Longbridge.Telligent.Tests\applicationhost_override.teamcity.config"
+											verbose="true" />
+							<echo message="Applied override to ${core.source}\tests\Longbridge.Telligent.Tests\applicationhost.config" />
+						</try>
+						<catch property="failure">
+							<echo message="Could not override ${core.source}\tests\Longbridge.Telligent.Tests\applicationhost.config: ${failure}" />
+						</catch>
+					</trycatch>
+				</if>
+				<copy file="${core.source}\tests\Longbridge.Telligent.Tests\connectionstrings.config.template"
+					  tofile="${core.testing}\connectionstrings.config" />
+			</when>
+			<otherwise>
+				<copy file="${core.source}\tests\Longbridge.Telligent.Tests\connectionstrings.config"
+					  tofile="${core.testing}\connectionstrings.config" />
+			</otherwise>
+		</choose>
+	</target>
+
+	<target name="publish-octopus" description="Place the assets in agreed location.">
+		<move todir="${core.publish}\${sys.build}" flatten="true">
+			<fileset basedir="${core.output}">
+				<include name="**\*.nupkg" />
+			</fileset>
+		</move>
+	</target>
+
+	<target name="revert-all" description="Revert all modified assets." depends="revert">
+		<echo message="Calling 'revert' target" />
+		<if test="${(sys.mode == 'automated') and property::exists('CCNetLabel')}">
+			<echo message="Reverting ${dbghost.changemanager.templateconfigurationpath}" />
+			<exec program="${core.tools}\subversion\svn.exe"
+				commandline="revert ${dbghost.changemanager.templateconfigurationpath}"
+				failonerror="false"
+				verbose="false" />
+		</if>
+	</target>
+	
+	<target name="distribute" description="Distribute assets">
+		<echo message="Calling 'distribute' target" />
+	</target>
+
+	<target name="help">
+		<echo message="The skeleton file for the build process is designed to execute the following targets in turn:" />
+		<echo message="-- clean" />
+		<echo message="-- get" />
+		<echo message="-- version" />
+		<echo message="-- dbbuild" />
+		<echo message="-- compile" />
+		<echo message="-- compile-tests" />
+		<echo message="-- test" />
+		<echo message="-- document" />
+		<echo message="-- distribute" />
+		<echo message="-- revert" />
+		<echo message="-- publish" />
+	</target>
+
+</project>
