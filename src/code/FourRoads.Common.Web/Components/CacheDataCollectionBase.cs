@@ -15,6 +15,8 @@ namespace FourRoads.Common
 
         public CachedDataCollectionBase(IPagedCollectionFactory pagedCollectionFactory, ICache cacheProvider, IObjectFactory objectFactory) : base(pagedCollectionFactory, cacheProvider)
         {
+            _objectFactory = objectFactory;
+
             GetDataQuery = ((ICachedCollectionData<TItem, TQuery>) this).GetQueryNoCache;
             GetDataSingle = ((ICachedCollectionData<TItem, TQuery>) this).GetSingleNoCache;
         }
