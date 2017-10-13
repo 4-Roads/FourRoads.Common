@@ -13,6 +13,6 @@
 		<tags>utility</tags>
 	</metadata>
 	<files>
-      <file src="code\FourRoads.Common\bin\Release\FourRoads.*.dll" target="lib\net462" />
+      <file src="code\**\bin\Release\FourRoads.*.dll" target="lib\net462" />
     </files>
 </package>
