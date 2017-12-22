@@ -13,6 +13,6 @@
 		<tags>utility</tags>
 	</metadata>
 	<files>
-      <file src="code\**\bin\Release\FourRoads.*.dll" target="lib\net462" exclude="..\build\output\*Tests*" />
+      <file src="code\**\bin\**\FourRoads.*.dll" target="lib\net462" exclude="*Tests*" />
     </files>
 </package>
