@@ -109,6 +109,11 @@ namespace FourRoads.Common.Web.Tests
 
     public class MockQuery : IPagedQueryV2
     {
+        public MockQuery()
+        {
+            UseCache = true;
+        }
+
         public uint PageIndex { get; set; }
         public int PageSize { get; set; }
         public SortOrder SortOrder { get; set; }
@@ -199,6 +204,9 @@ namespace FourRoads.Common.Web.Tests
                 CacheCollectionTests._AverageDuration.IncrementBy(CacheCollectionTests.StartTime.Ticks - dt.Ticks);
                 CacheCollectionTests._AverageDurationBase.Increment();
                 CacheCollectionTests._TotalReadOperations.Increment();
+
+                if (counter % 24 == 0)
+                    Injector.Instance.Get<TestCachedCollection>().Clear();
 
                 counter++;
             }
@@ -299,8 +307,9 @@ namespace FourRoads.Common.Web.Tests
 
                // 1. Create a new Simple Injector container
          Container container = new Container();
-            
+
             // 2. Configure the container (register)
+            container.Register<TestCachedCollection, TestCachedCollection>(Lifestyle.Singleton);
             container.Register<ICache, MockCache>(Lifestyle.Singleton);
             container.Register<IPagedCollectionFactory, PagedCollectionFactoryMock>(Lifestyle.Singleton);
 

@@ -81,12 +81,12 @@ namespace FourRoads.Common.Web.Tests
 
         public void RemoveByTags(string[] tags)
         {
-            throw new NotImplementedException();
+        
         }
 
         public void Clear()
         {
-            throw new NotImplementedException();
+        
         }
 
         #endregion

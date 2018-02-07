@@ -12,6 +12,7 @@ namespace FourRoads.Common.Web.Tests
         private Injector()
         {
             // 2. Configure the container (register)
+            container.Register<TestCachedCollection, TestCachedCollection>(Lifestyle.Singleton);
             container.Register<ICache, MockCache>(Lifestyle.Singleton);
             container.Register<IPagedCollectionFactory, PagedCollectionFactoryMock>(Lifestyle.Singleton);
 

@@ -52,7 +52,7 @@ namespace FourRoads.Common
 
         protected void SetCachedQueries(Dictionary<string, ResultData<string>> cachedQueries)
         {
-            CacheProvider.Insert(DerrivedTypeName + ":Queries", cachedQueries);
+            CacheProvider.Insert(DerrivedTypeName + ":Queries", cachedQueries,new TimeSpan(0,0,30));
         }
 
         public IPagedCollection<TOverrideContainerType> Get<TOverrideContainerType>(TQueryType query)
@@ -253,12 +253,20 @@ namespace FourRoads.Common
 
         public void ClearQueries()
         {
-            //Clear all of the queries
-            var cachedQueries = GetCachedQueries();
+            _lock.EnterWriteLock();
+            try
+            {
+                //Clear all of the queries
+                var cachedQueries = GetCachedQueries();
 
-            cachedQueries.Clear();
+                cachedQueries.Clear();
 
-            SetCachedQueries(cachedQueries);
+                SetCachedQueries(cachedQueries);
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
         }
 
         public override void Clear()
