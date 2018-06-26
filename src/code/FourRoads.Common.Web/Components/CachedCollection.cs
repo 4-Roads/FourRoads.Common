@@ -32,6 +32,10 @@ namespace FourRoads.Common
         public CachedCollection(IPagedCollectionFactory pagedCollectionFactory, ICache cacheProvider) : base(cacheProvider)
         {
             _pagedCollectionFactory = pagedCollectionFactory;
+
+            CacheRefreshInterval = 30;
+            CacheTags = new string[0];
+            CacheScope = CacheScopeOption.All;
         }
 
         protected RefreshQuery GetDataQuery
@@ -39,20 +43,24 @@ namespace FourRoads.Common
             set { _getDataQuery = value; }
         }
 
+        protected int CacheRefreshInterval { get; set; }
+        protected string[] CacheTags { get; set; }
+        protected CacheScopeOption CacheScope { get; set; }
+
         /// <summary>
         ///     This property controls the limit as to how many items missing relative to page size requested before a full
         ///     re-query is performed
         /// </summary>
         public short ReQueryHueristicMarginPercentage { get; set; } = 80;
 
-        protected Dictionary<string, ResultData<string>> GetCachedQueries()
+        protected CacheableDictionary<string, ResultData<string>> GetCachedQueries()
         {
-            return CacheProvider.Get<Dictionary<string, ResultData<string>>>(DerrivedTypeName + ":Queries") ?? new Dictionary<string, ResultData<string>>();
+            return CacheProvider.Get<CacheableDictionary<string, ResultData<string>>>(DerrivedTypeName + ":Queries") ?? new CacheableDictionary<string, ResultData<string>>(CacheRefreshInterval, CacheTags,CacheScope);
         }
 
-        protected void SetCachedQueries(Dictionary<string, ResultData<string>> cachedQueries)
+        protected void SetCachedQueries(CacheableDictionary<string, ResultData<string>> cachedQueries)
         {
-            CacheProvider.Insert(DerrivedTypeName + ":Queries", cachedQueries,new TimeSpan(0,0,30));
+            CacheProvider.Insert(DerrivedTypeName + ":Queries", cachedQueries);
         }
 
         public IPagedCollection<TOverrideContainerType> Get<TOverrideContainerType>(TQueryType query)
@@ -285,6 +293,24 @@ namespace FourRoads.Common
 
         #region Nested type: ResultData
 
+        protected sealed class CacheableDictionary<k, v> : Dictionary<k, v>, ICacheable where k : class
+        {
+            public CacheableDictionary(int cacheRefreshInterval, string[] cacheTags, CacheScopeOption cacheScope)
+            {
+                CacheRefreshInterval = cacheRefreshInterval;
+                CacheTags = cacheTags;
+                CacheScope = cacheScope;
+            }
+
+            public string CacheID => string.Join("-", Array.ConvertAll<object, string>(Keys.ToArray(), Convert.ToString));
+
+            public int CacheRefreshInterval { get; }
+
+            public string[] CacheTags { get; }
+
+            public CacheScopeOption CacheScope { get; }
+        }
+
         [Serializable]
         public sealed class ResultData<TKey>
         {
@@ -300,10 +326,10 @@ namespace FourRoads.Common
                 TotalRecords = totalRecords;
             }
 
-            public uint PageIndex { get; set; }
-            public int PageSize { get; set; }
-            public TKey[] Keys { get; set; }
-            public int TotalRecords { get; set; }
+            public uint PageIndex { get; }
+            public int PageSize { get; }
+            public TKey[] Keys { get; }
+            public int TotalRecords { get; }
         }
 
         #endregion
