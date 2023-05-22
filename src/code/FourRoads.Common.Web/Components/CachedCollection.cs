@@ -15,6 +15,7 @@ using FourRoads.Common.Interfaces;
 
 namespace FourRoads.Common
 {
+    [Serializable]
     public class CachedCollection<TContainerType, TQueryType> :
         SimpleCachedCollection<TContainerType>
         where TQueryType : class, IPagedQueryV2
@@ -293,6 +294,7 @@ namespace FourRoads.Common
 
         #region Nested type: ResultData
 
+        [Serializable]
         protected sealed class CacheableDictionary<k, v> : Dictionary<k, v>, ICacheable where k : class
         {
             public CacheableDictionary(int cacheRefreshInterval, string[] cacheTags, CacheScopeOption cacheScope)
