@@ -366,7 +366,6 @@ namespace FourRoads.Common.Web.Tests
             thread = new Thread(th.Run);
             thread.Start();
 
-
             //Cache lifetime tests
             TestCachedCollection lifetimeTest = Injector.Instance.Get<TestCachedCollection>();
 
@@ -378,7 +377,7 @@ namespace FourRoads.Common.Web.Tests
 
             lifetimeTest.Get("2");
 
-            if (lifetimeTest.GotFromDatabase == true)
+            if (lifetimeTest.GotFromDatabase == false)
             {
                 Console.WriteLine("Should have used cache");
             }
@@ -389,9 +388,37 @@ namespace FourRoads.Common.Web.Tests
 
             lifetimeTest.Get("2");
 
-            if (lifetimeTest.GotFromDatabase == false)
+            if (lifetimeTest.GotFromDatabase == true)
             {
                 Console.WriteLine("Should have not used cache");
+            }
+
+            var q = new MockQuery();
+
+            var count = 4;
+            q.CacheKey = "1,2,3,4";
+            q.PageSize = count;
+
+            var results = Injector.Instance.Get<TestCachedCollection>().Get(q);
+
+            lifetimeTest.GotFromDatabase = false;
+
+            results = Injector.Instance.Get<TestCachedCollection>().Get(q);
+
+            if (lifetimeTest.GotFromDatabase == false)
+            {
+                Console.WriteLine("Should have used cache collection");
+            }
+
+            System.Threading.SpinWait.SpinUntil(() => false, 120 * 100);
+
+            lifetimeTest.GotFromDatabase = false;
+
+            results = Injector.Instance.Get<TestCachedCollection>().Get(q);
+
+            if (lifetimeTest.GotFromDatabase == true)
+            {
+                Console.WriteLine("Should have not used cache collection");
             }
 
             Console.WriteLine("Waiting for key press");
