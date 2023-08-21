@@ -21,7 +21,7 @@ namespace FourRoads.Common.Web.Tests
             get { return ID.ToString(); }
         }
 
-        public int CacheRefreshInterval { get; } = 2;
+        public int CacheRefreshInterval { get; } = 10;
 
         public string[] CacheTags
         {
@@ -129,8 +129,12 @@ namespace FourRoads.Common.Web.Tests
             GetDataSingle = RefreshSingleMethod;
         }
 
+        public bool GotFromDatabase { get; set; }
+
         public IPagedCollection<UniqueObject> RefreshQueryMethod(MockQuery query)
         {
+            GotFromDatabase = true;
+
             var ids = query.CacheKey.Split(',');
 
             var collection = PageCollectionMock.Instance();
@@ -149,6 +153,8 @@ namespace FourRoads.Common.Web.Tests
 
         public UniqueObject RefreshSingleMethod(string id)
         {
+            GotFromDatabase = true;
+
             var obj = new UniqueObject
             {
                 Version = CacheCollectionTests._sourceData[id].Version,
@@ -318,8 +324,7 @@ namespace FourRoads.Common.Web.Tests
 
             Injector.Instance.SetContainer(container);
 
-
-        var threads = new List<EventWaitHandle>();
+            var threads = new List<EventWaitHandle>();
 
             Thread thread;
             //create 100 threads that are performing all of the queries randomly
@@ -360,6 +365,34 @@ namespace FourRoads.Common.Web.Tests
             var th = new IntegrityThread();
             thread = new Thread(th.Run);
             thread.Start();
+
+
+            //Cache lifetime tests
+            TestCachedCollection lifetimeTest = Injector.Instance.Get<TestCachedCollection>();
+
+            lifetimeTest.GotFromDatabase = false;
+
+            lifetimeTest.Get("2");
+
+            lifetimeTest.GotFromDatabase = false;
+
+            lifetimeTest.Get("2");
+
+            if (lifetimeTest.GotFromDatabase == true)
+            {
+                Console.WriteLine("Should have used cache");
+            }
+
+            System.Threading.SpinWait.SpinUntil(() => false,60 * 100);
+
+            lifetimeTest.GotFromDatabase = false;
+
+            lifetimeTest.Get("2");
+
+            if (lifetimeTest.GotFromDatabase == false)
+            {
+                Console.WriteLine("Should have not used cache");
+            }
 
             Console.WriteLine("Waiting for key press");
             Console.ReadKey(true);
