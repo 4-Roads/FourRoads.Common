@@ -15,7 +15,6 @@ using FourRoads.Common.Interfaces;
 
 namespace FourRoads.Common
 {
-    [Serializable]
     public class CachedCollection<TContainerType, TQueryType> :
         SimpleCachedCollection<TContainerType>
         where TQueryType : class, IPagedQueryV2
