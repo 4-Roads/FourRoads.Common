@@ -53,12 +53,12 @@ namespace FourRoads.Common
         /// </summary>
         public short ReQueryHueristicMarginPercentage { get; set; } = 80;
 
-        protected CacheableDictionary<string, ResultData<string>> GetCachedQueries()
+        protected CacheableDictionary<string> GetCachedQueries()
         {
-            return CacheProvider.Get<CacheableDictionary<string, ResultData<string>>>(DerrivedTypeName + ":Queries") ?? new CacheableDictionary<string, ResultData<string>>(CacheRefreshInterval, CacheTags,CacheScope);
+            return CacheProvider.Get(DerrivedTypeName + ":Queries") as CacheableDictionary<string> ?? new CacheableDictionary<string>(CacheRefreshInterval, CacheTags,CacheScope);
         }
 
-        protected void SetCachedQueries(CacheableDictionary<string, ResultData<string>> cachedQueries)
+        protected void SetCachedQueries(CacheableDictionary<string> cachedQueries)
         {
             CacheProvider.Insert(DerrivedTypeName + ":Queries", cachedQueries);
         }
@@ -81,7 +81,7 @@ namespace FourRoads.Common
 
             IPagedCollection<TOverrideContainerType> results = null;
 
-            ResultData<string> resultInfo = null;
+            ResultData resultInfo = null;
             var hasResultsList = false;
             var cacheKey = query.CacheKey;
 
@@ -129,7 +129,7 @@ namespace FourRoads.Common
             return results;
         }
 
-        private bool CheckHeuristicInRange(ResultData<string> resultInfo)
+        private bool CheckHeuristicInRange(ResultData resultInfo)
         {
             if (resultInfo == null)
                 return false;
@@ -226,7 +226,7 @@ namespace FourRoads.Common
                 }
             }
 
-            var resultInfo = new ResultData<string>(keys.ToArray(), query.PageIndex, query.PageSize, results.TotalRecords);
+            var resultInfo = new ResultData(keys.ToArray(), query.PageIndex, query.PageSize, results.TotalRecords);
 
             _lock.EnterWriteLock();
             try
@@ -294,7 +294,7 @@ namespace FourRoads.Common
         #region Nested type: ResultData
 
         [Serializable]
-        protected sealed class CacheableDictionary<k, v> : Dictionary<k, v>, ICacheable where k : class
+        protected sealed class CacheableDictionary<k> : SerializableDictionary<k, ResultData>, ICacheable where k : class
         {
             public CacheableDictionary()
             {
@@ -319,13 +319,13 @@ namespace FourRoads.Common
         }
 
         [Serializable]
-        public sealed class ResultData<TKey>
+        public sealed class ResultData
         {
             public ResultData()
             {
             }
 
-            public ResultData(TKey[] keys, uint pageIndex, int pageSize, int totalRecords)
+            public ResultData(string[] keys, uint pageIndex, int pageSize, int totalRecords)
             {
                 PageIndex = pageIndex;
                 PageSize = pageSize;
@@ -335,7 +335,7 @@ namespace FourRoads.Common
 
             public uint PageIndex { get; }
             public int PageSize { get; }
-            public TKey[] Keys { get; }
+            public string[] Keys { get; }
             public int TotalRecords { get; }
         }
 
