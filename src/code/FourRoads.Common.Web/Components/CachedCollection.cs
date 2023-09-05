@@ -296,6 +296,12 @@ namespace FourRoads.Common
         [Serializable]
         protected sealed class CacheableDictionary<k, v> : Dictionary<k, v>, ICacheable where k : class
         {
+            public CacheableDictionary()
+            {
+                CacheRefreshInterval = 10;
+                CacheScope = CacheScopeOption.All;
+            }
+
             public CacheableDictionary(int cacheRefreshInterval, string[] cacheTags, CacheScopeOption cacheScope)
             {
                 CacheRefreshInterval = cacheRefreshInterval;
