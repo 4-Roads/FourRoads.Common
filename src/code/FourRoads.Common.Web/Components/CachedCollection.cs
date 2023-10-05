@@ -33,8 +33,8 @@ namespace FourRoads.Common
         {
             _pagedCollectionFactory = pagedCollectionFactory;
 
-            CacheRefreshInterval = 30;
-            CacheTags = new string[0];
+            CacheRefreshInterval = 120;
+            CacheTags = Array.Empty<string>();
             CacheScope = CacheScopeOption.All;
         }
 
@@ -138,8 +138,6 @@ namespace FourRoads.Common
             if (resultInfo.TotalRecords == 0)
                 return true;
 
-            bool returnResult;
-
             var target = Math.Min(resultInfo.TotalRecords, resultInfo.PageSize);
             var actual = 0;
             var keyLength = resultInfo.Keys.Length;
@@ -163,7 +161,7 @@ namespace FourRoads.Common
                 percentage = actual/target*100;
             }
 
-            returnResult = percentage > ReQueryHueristicMarginPercentage;
+            var returnResult = percentage > ReQueryHueristicMarginPercentage;
 
 #if _TRACING
             System.Diagnostics.Debug.WriteLine("HueristicMarginPercentage:" +returnResult.ToString());
@@ -209,12 +207,9 @@ namespace FourRoads.Common
 
             results = _getDataQuery(query);
 
-            var replacementCollection = new List<TContainerType>();
-
             foreach (var item in results.Items)
             {
                 keys.Add(item.CacheID);
-                replacementCollection.Add(item);
 
                 //The cache has the latest non contextual version
                 if (CacheProvider.Get<TContainerType>(item.CacheID) == null)
@@ -232,6 +227,9 @@ namespace FourRoads.Common
             try
             {
                 var cachedQueries = GetCachedQueries();
+
+                //Clear the cached queries, to keep the inprocess cache in sync
+                CacheProvider.Remove(DerrivedTypeName + ":Queries");
 
                 if (cachedQueries.ContainsKey(cacheKey))
                 {
@@ -266,6 +264,8 @@ namespace FourRoads.Common
             {
                 //Clear all of the queries
                 var cachedQueries = GetCachedQueries();
+
+                CacheProvider.Remove(DerrivedTypeName + ":Queries");
 
                 cachedQueries.Clear();
 

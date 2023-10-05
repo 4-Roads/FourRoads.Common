@@ -141,6 +141,7 @@ namespace FourRoads.Common
             _lock.EnterWriteLock();
             try
             {
+                CacheProvider.Remove(obj.CacheID);
                 CacheProvider.Insert(obj, new[] {DerrivedTypeName});
             }
             finally

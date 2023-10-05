@@ -45,6 +45,5 @@ namespace FourRoads.Common.Interfaces
 
         void RemoveByTags(string[] tags);
 
-        void Clear();
     }
 }

@@ -64,9 +64,9 @@ namespace FourRoads.Common
         public QueryStringBuilder Add(string name, string value, bool isUnique)
         {
             var existingValue = base[name];
-            if (string.IsNullOrEmpty(existingValue)) base.Add(name, HttpUtility.UrlEncodeUnicode(value));
-            else if (isUnique) base[name] = HttpUtility.UrlEncodeUnicode(value);
-            else base[name] += "," + HttpUtility.UrlEncodeUnicode(value);
+            if (string.IsNullOrEmpty(existingValue)) base.Add(name, HttpUtility.UrlEncode(value));
+            else if (isUnique) base[name] = HttpUtility.UrlEncode(value);
+            else base[name] += "," + HttpUtility.UrlEncode(value);
             return this;
         }
 
@@ -160,7 +160,7 @@ namespace FourRoads.Common
                 {
                     foreach (var val in base[Keys[i]].Split(','))
                         builder.Append(builder.Length == 0 ? "" : "&")
-                            .Append(HttpUtility.UrlEncodeUnicode(Keys[i]))
+                            .Append(HttpUtility.UrlEncode(Keys[i]))
                             .Append("=").Append(val);
                 }
             }
