@@ -39,7 +39,6 @@ namespace FourRoads.Common
         public virtual void Add(TItem item)
         {
             DataProvider.Add(item);
-            CachedCollection.Add(item);
         }
 
         public virtual void Delete(TItem item)
@@ -52,7 +51,6 @@ namespace FourRoads.Common
         {
             CachedCollection.Remove(item);
             DataProvider.Update(item);
-            CachedCollection.Add(item);
         }
 
         public virtual TItem Get(TId id)
