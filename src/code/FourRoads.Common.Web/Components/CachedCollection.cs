@@ -53,12 +53,12 @@ namespace FourRoads.Common
         /// </summary>
         public short ReQueryHueristicMarginPercentage { get; set; } = 80;
 
-        protected CacheableDictionary<string> GetCachedQueries()
+        protected CacheableDictionary GetCachedQueries()
         {
-            return CacheProvider.Get(DerrivedTypeName + ":Queries") as CacheableDictionary<string> ?? new CacheableDictionary<string>(CacheRefreshInterval, CacheTags,CacheScope);
+            return CacheProvider.Get(DerrivedTypeName + ":Queries") as CacheableDictionary ?? new CacheableDictionary(CacheRefreshInterval, CacheTags,CacheScope);
         }
 
-        protected void SetCachedQueries(CacheableDictionary<string> cachedQueries)
+        protected void SetCachedQueries(CacheableDictionary cachedQueries)
         {
             CacheProvider.Insert(DerrivedTypeName + ":Queries", cachedQueries);
         }
@@ -294,11 +294,11 @@ namespace FourRoads.Common
         #region Nested type: ResultData
 
         [Serializable]
-        protected sealed class CacheableDictionary<k> : SerializableDictionary<k, ResultData>, ICacheable where k : class
+        protected sealed class CacheableDictionary : SerializableDictionary<string, ResultData>, ICacheable
         {
             public CacheableDictionary()
             {
-                CacheRefreshInterval = 10;
+                CacheRefreshInterval = 120;
                 CacheScope = CacheScopeOption.All;
             }
 
@@ -309,7 +309,7 @@ namespace FourRoads.Common
                 CacheScope = cacheScope;
             }
 
-            public string CacheID => string.Join("-", Array.ConvertAll<object, string>(Keys.ToArray(), Convert.ToString));
+            public string CacheID => string.Join("-", Keys.ToArray());
 
             public int CacheRefreshInterval { get; }
 
