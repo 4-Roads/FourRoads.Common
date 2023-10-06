@@ -8,7 +8,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO.Compression;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using FourRoads.Common.Interfaces;
 
 #endregion
@@ -294,8 +298,13 @@ namespace FourRoads.Common
         #region Nested type: ResultData
 
         [Serializable]
-        protected sealed class CacheableDictionary : SerializableDictionary<string, ResultData>, ICacheable
+        public sealed class CacheableDictionary : Dictionary<string, ResultData>, ICacheable
         {
+            protected CacheableDictionary(SerializationInfo information, StreamingContext context)
+                : base(information, context)
+            {
+            }
+
             public CacheableDictionary()
             {
                 CacheRefreshInterval = 120;
